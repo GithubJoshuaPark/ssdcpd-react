@@ -1,0 +1,6 @@
+/* Vite 기본 레이아웃을 없애고, styles.css가 모든 걸 담당하도록 둠 */
+body {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+}
