@@ -496,7 +496,7 @@ Components
 **Senior Software Developer**
 
 - Website: [https://ssdcpd-react.web.app/](https://ssdcpd-react.web.app/)
-- GitHub: [@your-username](https://github.com/your-username)
+- GitHub: [@GithubJoshuaPark](https://github.com/GithubJoshuaPark/ssdcpd-react)
 
 ---
 
