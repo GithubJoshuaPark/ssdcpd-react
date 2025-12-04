@@ -1,5 +1,5 @@
 // 카테고리: 필터에서 사용하는 값들만 Union 타입으로 정의
-export type TrackCategory = 'systems' | 'scripting' | 'backend' | 'lowlevel'
+export type TrackCategory = 'systems' | 'scripting' | 'backend' | 'lowlevel' | 'c/c++' | 'frontend'
 
 // 상태: 현재는 "Active" 하나지만 추후 확장 대비
 export type TrackStatus = 'Active' | 'Planned' | 'Deprecated'

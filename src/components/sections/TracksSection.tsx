@@ -12,6 +12,7 @@ export const TracksSection: FC = () => {
     { key: 'systems', label: t('filter.systems') },
     { key: 'scripting', label: t('filter.scripting') },
     { key: 'backend', label: t('filter.backend') },
+    { key: 'frontend', label: t('filter.frontend') },
     { key: 'lowlevel', label: t('filter.lowlevel') },
   ]
 
