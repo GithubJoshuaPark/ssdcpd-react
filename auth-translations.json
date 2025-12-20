@@ -1,0 +1,62 @@
+{
+  "en": {
+    "auth": {
+      "login": "Login",
+      "logout": "Logout",
+      "signup": "Sign Up",
+      "createAccount": "Create Account",
+      "forgotPassword": "Forgot Password?",
+      "resetPassword": "Reset Password",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "name": "Name (Optional)",
+      "sendResetEmail": "Send Reset Email",
+      "backToLogin": "Back to Login",
+      "alreadyHaveAccount": "Already have an account?",
+      "dontHaveAccount": "Don't have an account?",
+      "emailSent": "Verification email sent! Please check your inbox.",
+      "resetEmailSent": "Password reset email sent! Please check your inbox.",
+      "emailNotVerified": "Please verify your email before logging in.",
+      "loginSuccess": "Login successful!",
+      "logoutSuccess": "Logout successful!",
+      "invalidEmail": "Invalid email format.",
+      "passwordTooShort": "Password must be at least 6 characters.",
+      "passwordMismatch": "Passwords do not match.",
+      "invalidCredentials": "Invalid email or password.",
+      "emailAlreadyInUse": "Email is already in use.",
+      "userNotFound": "User not found.",
+      "wrongPassword": "Wrong password."
+    }
+  },
+  "ko": {
+    "auth": {
+      "login": "로그인",
+      "logout": "로그아웃",
+      "signup": "회원가입",
+      "createAccount": "계정 만들기",
+      "forgotPassword": "비밀번호를 잊으셨나요?",
+      "resetPassword": "비밀번호 재설정",
+      "email": "이메일",
+      "password": "비밀번호",
+      "confirmPassword": "비밀번호 확인",
+      "name": "이름 (선택)",
+      "sendResetEmail": "재설정 이메일 보내기",
+      "backToLogin": "로그인으로 돌아가기",
+      "alreadyHaveAccount": "이미 계정이 있으신가요?",
+      "dontHaveAccount": "계정이 없으신가요?",
+      "emailSent": "인증용 이메일을 발송했습니다. 확인해 주십시오.",
+      "resetEmailSent": "비밀번호 재설정 이메일을 발송했습니다. 확인해 주십시오.",
+      "emailNotVerified": "로그인하기 전에 이메일을 인증해 주세요.",
+      "loginSuccess": "로그인 성공!",
+      "logoutSuccess": "로그아웃 성공!",
+      "invalidEmail": "이메일 형식이 올바르지 않습니다.",
+      "passwordTooShort": "비밀번호는 최소 6자 이상이어야 합니다.",
+      "passwordMismatch": "비밀번호가 일치하지 않습니다.",
+      "invalidCredentials": "이메일 또는 비밀번호가 올바르지 않습니다.",
+      "emailAlreadyInUse": "이미 사용 중인 이메일입니다.",
+      "userNotFound": "사용자를 찾을 수 없습니다.",
+      "wrongPassword": "비밀번호가 올바르지 않습니다."
+    }
+  }
+}

@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 .env*
+profile-translations.json
+register_profile_translations.js
+register_profile_translations.cjs
+firebase_realtime_db_rules_1.json
+firebase_realtime_db_rules_2.json
+firebase_realtime_db_rules_3.json
