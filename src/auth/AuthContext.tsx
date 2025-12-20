@@ -13,7 +13,7 @@ export interface AuthContextType {
   resetPassword: (email: string) => Promise<void>
   updateProfile: (name: string, bio: string) => Promise<void>
   uploadProfilePhoto: (file: File) => Promise<void>
-  changePassword: (newPassword: string) => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
   deleteAccount: () => Promise<void>
 }
 

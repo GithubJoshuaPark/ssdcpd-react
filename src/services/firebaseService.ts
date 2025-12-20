@@ -14,6 +14,8 @@ import {
     signOut,
     sendEmailVerification,
     sendPasswordResetEmail,
+    EmailAuthProvider,
+    reauthenticateWithCredential,
     type Auth,
     type UserCredential,
 } from 'firebase/auth'
@@ -321,15 +323,40 @@ export async function deleteProfileImage(photoURL: string): Promise<void> {
 }
 
 /**
+ * 사용자 재인증 (비밀번호 변경 등 민감한 작업 전에 필요)
+ */
+export async function reauthenticateUser(currentPassword: string): Promise<void> {
+  try {
+    const user = auth.currentUser
+    if (!user || !user.email) {
+      throw new Error('No user is currently signed in')
+    }
+
+    const credential = EmailAuthProvider.credential(user.email, currentPassword)
+    await reauthenticateWithCredential(user, credential)
+  } catch (err) {
+    console.error('Error reauthenticating user:', err)
+    throw err
+  }
+}
+
+/**
  * 사용자 비밀번호 변경
  */
-export async function updateUserPassword(newPassword: string): Promise<void> {
+export async function updateUserPassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
   try {
     const user = auth.currentUser
     if (!user) {
       throw new Error('No user is currently signed in')
     }
 
+    // 먼저 재인증
+    await reauthenticateUser(currentPassword)
+
+    // 비밀번호 변경
     const { updatePassword } = await import('firebase/auth')
     await updatePassword(user, newPassword)
   } catch (err) {

@@ -52,6 +52,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
   const signup = async (email: string, password: string, name?: string) => {
     await signupWithEmail(email, password, name)
+    // 회원가입 직후 자동 로그인 방지 (이메일 인증 강제화)
+    await firebaseLogout()
   }
 
   const login = async (email: string, password: string) => {
@@ -105,8 +107,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     setUserProfile(updatedProfile)
   }
 
-  const changePassword = async (newPassword: string) => {
-    await updateUserPassword(newPassword)
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    await updateUserPassword(currentPassword, newPassword)
   }
 
   const deleteAccount = async () => {

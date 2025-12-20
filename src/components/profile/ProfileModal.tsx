@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/useAuth'
 import { useI18n } from '../../i18n/useI18n'
 import { Toast, type ToastType } from '../common/Toast'
 import { ConfirmDialog } from '../common/ConfirmDialog'
+import { CustomPrompt } from '../common/CustomPrompt'
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -22,6 +23,9 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showCurrentPasswordPrompt, setShowCurrentPasswordPrompt] = useState(false)
+  const [showNewPasswordPrompt, setShowNewPasswordPrompt] = useState(false)
+  const [currentPasswordTemp, setCurrentPasswordTemp] = useState('')
 
   // 프로필 데이터 초기화
   useEffect(() => {
@@ -36,14 +40,14 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
   // ESC 키로 모달 닫기
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen && !showDeleteConfirm) {
+      if (e.key === 'Escape' && isOpen && !showDeleteConfirm && !showCurrentPasswordPrompt && !showNewPasswordPrompt) {
         onClose()
       }
     }
 
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [isOpen, showDeleteConfirm, onClose])
+  }, [isOpen, showDeleteConfirm, showCurrentPasswordPrompt, showNewPasswordPrompt, onClose])
 
   // 모달이 열릴 때 body 스크롤 방지
   useEffect(() => {
@@ -111,21 +115,43 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
     }
   }
 
-  const handleChangePassword = async () => {
-    const newPassword = prompt(t('profile.enterNewPassword'))
-    if (!newPassword) return
+  const handleChangePassword = () => {
+    setShowCurrentPasswordPrompt(true)
+  }
+
+  const handleCurrentPasswordConfirm = (currentPassword: string) => {
+    setShowCurrentPasswordPrompt(false)
+    setCurrentPasswordTemp(currentPassword)
+    setShowNewPasswordPrompt(true)
+  }
+
+  const handleNewPasswordConfirm = async (newPassword: string) => {
+    setShowNewPasswordPrompt(false)
 
     if (newPassword.length < 6) {
       setToast({ message: t('auth.passwordTooShort'), type: 'error' })
+      setCurrentPasswordTemp('') // Clear stored password
       return
     }
 
     try {
-      await changePassword(newPassword)
+      await changePassword(currentPasswordTemp, newPassword)
       setToast({ message: t('profile.passwordChangeSuccess'), type: 'success' })
+      setCurrentPasswordTemp('') // Clear stored password
     } catch (error) {
       console.error('Password change error:', error)
-      setToast({ message: 'Failed to change password', type: 'error' })
+      setCurrentPasswordTemp('') // Clear stored password
+
+      // Check for specific Firebase errors
+      if (error instanceof Error) {
+        if (error.message.includes('auth/wrong-password') || error.message.includes('auth/invalid-credential')) {
+          setToast({ message: t('auth.wrongPassword') || 'Current password is incorrect', type: 'error' })
+        } else {
+          setToast({ message: 'Failed to change password', type: 'error' })
+        }
+      } else {
+        setToast({ message: 'Failed to change password', type: 'error' })
+      }
     }
   }
 
@@ -249,6 +275,36 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* 현재 비밀번호 입력 프롬프트 */}
+      <CustomPrompt
+        key={showCurrentPasswordPrompt ? 'current-open' : 'current-closed'}
+        isOpen={showCurrentPasswordPrompt}
+        title={t('profile.changePassword')}
+        message="Enter your current password"
+        placeholder="Current password"
+        defaultValue=""
+        onConfirm={handleCurrentPasswordConfirm}
+        onCancel={() => {
+          setShowCurrentPasswordPrompt(false)
+          setCurrentPasswordTemp('')
+        }}
+      />
+
+      {/* 새 비밀번호 입력 프롬프트 */}
+      <CustomPrompt
+        key={showNewPasswordPrompt ? 'new-open' : 'new-closed'}
+        isOpen={showNewPasswordPrompt}
+        title={t('profile.changePassword')}
+        message={t('profile.enterNewPassword')}
+        placeholder="New password (min 6 characters)"
+        defaultValue=""
+        onConfirm={handleNewPasswordConfirm}
+        onCancel={() => {
+          setShowNewPasswordPrompt(false)
+          setCurrentPasswordTemp('')
+        }}
+      />
     </>
   )
 }
