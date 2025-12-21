@@ -121,6 +121,59 @@ export async function getAllTracks(): Promise<Track[]> {
   }
 }
 
+/**
+ * Create a new track in Firebase Realtime Database
+ */
+export async function createTrack(track: Omit<Track, 'id'>): Promise<string> {
+  try {
+    const { push, set } = await import('firebase/database')
+    const tracksRef = ref(database, 'tracks')
+    const newTrackRef = push(tracksRef)
+
+    if (!newTrackRef.key) {
+      throw new Error('Failed to generate track ID')
+    }
+
+    await set(newTrackRef, track)
+    return newTrackRef.key
+  } catch (err) {
+    console.error('Error creating track:', err)
+    throw err
+  }
+}
+
+/**
+ * Update an existing track in Firebase Realtime Database
+ */
+export async function updateTrack(id: string, updates: Partial<Track>): Promise<void> {
+  try {
+    const { update } = await import('firebase/database')
+    const trackRef = ref(database, `tracks/${id}`)
+
+    // Remove id from updates if present
+    const { id: _, ...updateData } = updates as Track
+
+    await update(trackRef, updateData)
+  } catch (err) {
+    console.error('Error updating track:', err)
+    throw err
+  }
+}
+
+/**
+ * Delete a track from Firebase Realtime Database
+ */
+export async function deleteTrack(id: string): Promise<void> {
+  try {
+    const { remove } = await import('firebase/database')
+    const trackRef = ref(database, `tracks/${id}`)
+    await remove(trackRef)
+  } catch (err) {
+    console.error('Error deleting track:', err)
+    throw err
+  }
+}
+
 // ----- Authentication functions -----
 
 /**

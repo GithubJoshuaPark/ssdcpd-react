@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/useAuth'
 import { AuthModal } from '../auth/AuthModal'
 import { ProfileModal } from '../profile/ProfileModal'
 import { UsersModal } from '../admin/UsersModal'
+import { TracksModal } from '../admin/TracksModal'
 import { Toast } from '../common/Toast'
 
 export const Header: FC = () => {
@@ -14,6 +15,7 @@ export const Header: FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false)
+  const [isTracksModalOpen, setIsTracksModalOpen] = useState(false)
   const [showLogoutToast, setShowLogoutToast] = useState(false)
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false)
 
@@ -54,6 +56,12 @@ export const Header: FC = () => {
 
   const handleUsersClick = () => {
     setIsUsersModalOpen(true)
+    setIsMenuOpen(false)
+    setIsAdminDropdownOpen(false)
+  }
+
+  const handleTracksClick = () => {
+    setIsTracksModalOpen(true)
     setIsMenuOpen(false)
     setIsAdminDropdownOpen(false)
   }
@@ -145,10 +153,12 @@ export const Header: FC = () => {
                   >
                     👥 Users
                   </button>
-                  {/* Future admin features can be added here */}
-                  {/* <button className="admin-dropdown-item" onClick={handleSettingsClick}>
-                    ⚙️ Settings
-                  </button> */}
+                  <button
+                    className="admin-dropdown-item"
+                    onClick={handleTracksClick}
+                  >
+                    📚 Tracks
+                  </button>
                 </div>
               )}
             </div>
@@ -194,6 +204,11 @@ export const Header: FC = () => {
       <UsersModal
         isOpen={isUsersModalOpen}
         onClose={() => setIsUsersModalOpen(false)}
+      />
+
+      <TracksModal
+        isOpen={isTracksModalOpen}
+        onClose={() => setIsTracksModalOpen(false)}
       />
 
       {showLogoutToast && (

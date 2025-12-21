@@ -1764,3 +1764,479 @@ body {
     padding: 0;
   }
 }
+
+/* ========================================
+   Tracks Modal Styles
+   ======================================== */
+
+.tracks-modal {
+  background: linear-gradient(
+    to bottom,
+    rgba(18, 24, 40, 0.98),
+    rgba(15, 23, 42, 0.98)
+  );
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+  width: 90%;
+  max-width: 1000px;
+  padding: 32px;
+  position: relative;
+  animation: slideUp 0.3s ease;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.tracks-modal-title {
+  margin: 0 0 24px;
+  font-size: 1.5rem;
+  color: var(--text-main);
+}
+
+.tracks-filter-section {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tracks-search-input {
+  flex: 1;
+  min-width: 250px;
+}
+
+.tracks-table-container {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+}
+
+.tracks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.tracks-table th {
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: left;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.tracks-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.tracks-table tr:hover {
+  background: rgba(148, 163, 184, 0.05);
+}
+
+.track-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.track-link-icon {
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: transform 0.2s ease;
+}
+
+.track-link-icon:hover {
+  transform: scale(1.2);
+}
+
+.category-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.category-badge.systems {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.category-badge.scripting {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.category-badge.backend {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.category-badge.lowlevel,
+.category-badge.c\/c\+\+ {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.category-badge.frontend {
+  background: rgba(56, 189, 248, 0.15);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge.Active,
+.status-badge.active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.status-badge.Planned,
+.status-badge.planned {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.status-badge.Deprecated,
+.status-badge.deprecated {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.track-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.track-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: #7dd3fc;
+}
+
+.track-tag-more {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.track-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.track-edit-button,
+.track-delete-button {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.track-edit-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.track-delete-button:hover {
+  border-color: #ef4444;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.tracks-loading,
+.tracks-error,
+.tracks-empty {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Mobile Card Styles - hidden by default, shown only on mobile */
+.tracks-mobile-cards {
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.track-mobile-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.track-mobile-card:hover {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(148, 163, 184, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.track-mobile-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.track-mobile-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.track-mobile-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.track-mobile-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.track-info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.track-info-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.track-info-value {
+  font-size: 0.9rem;
+  color: var(--text-main);
+  word-break: break-word;
+}
+
+.track-mobile-card-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.track-mobile-card-footer .track-edit-button,
+.track-mobile-card-footer .track-delete-button {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+}
+
+/* Mobile Tracks Modal Styles */
+@media (max-width: 768px) {
+  .tracks-modal {
+    width: 95%;
+    max-width: 95%;
+    padding: 24px 20px;
+  }
+
+  .tracks-modal-title {
+    font-size: 1.3rem;
+  }
+
+  .tracks-filter-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tracks-search-input {
+    width: 100%;
+    min-width: 100%;
+  }
+}
+
+/* Mobile Card View (640px and below) */
+@media (max-width: 640px) {
+  .tracks-modal {
+    width: 95%;
+    padding: 20px 16px;
+    max-height: 90vh;
+  }
+
+  .tracks-modal-title {
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+  }
+
+  .tracks-filter-section {
+    margin-bottom: 16px;
+  }
+
+  .tracks-table-container {
+    border: none;
+  }
+
+  .tracks-mobile-cards {
+    padding: 0;
+  }
+}
+
+/* ========================================
+   Track Form Modal Styles
+   ======================================== */
+
+.track-form-modal {
+  background: linear-gradient(
+    to bottom,
+    rgba(18, 24, 40, 0.98),
+    rgba(15, 23, 42, 0.98)
+  );
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+  width: 90%;
+  max-width: 600px;
+  padding: 32px;
+  position: relative;
+  animation: slideUp 0.3s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.track-form-title {
+  margin: 0 0 24px;
+  font-size: 1.5rem;
+  color: var(--text-main);
+}
+
+.track-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.track-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.track-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.track-form-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.track-cancel-button {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: var(--text-muted);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.track-cancel-button:hover:not(:disabled) {
+  border-color: var(--text-main);
+  color: var(--text-main);
+}
+
+.track-cancel-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Mobile Track Form Modal Styles */
+@media (max-width: 768px) {
+  .track-form-modal {
+    width: 95%;
+    max-width: 95%;
+    padding: 24px 20px;
+  }
+
+  .track-form-title {
+    font-size: 1.3rem;
+  }
+
+  .track-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .track-form-modal {
+    width: 92%;
+    padding: 20px 16px;
+    max-height: 92vh;
+  }
+
+  .track-form-title {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+
+  .track-form-buttons {
+    flex-direction: column-reverse;
+  }
+
+  .track-cancel-button,
+  .track-form-buttons .auth-button {
+    width: 100%;
+  }
+}
