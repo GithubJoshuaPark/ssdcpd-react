@@ -961,9 +961,11 @@ body {
 
 /* Profile Modal */
 .profile-modal {
-  background: linear-gradient(to bottom,
-          rgba(18, 24, 40, 0.98),
-          rgba(15, 23, 42, 0.98));
+  background: linear-gradient(
+    to bottom,
+    rgba(18, 24, 40, 0.98),
+    rgba(15, 23, 42, 0.98)
+  );
   backdrop-filter: blur(20px);
   border-radius: var(--radius-lg);
   border: 1px solid rgba(148, 163, 184, 0.3);
@@ -1107,9 +1109,11 @@ body {
 }
 
 .confirm-dialog {
-  background: linear-gradient(to bottom,
-          rgba(18, 24, 40, 0.98),
-          rgba(15, 23, 42, 0.98));
+  background: linear-gradient(
+    to bottom,
+    rgba(18, 24, 40, 0.98),
+    rgba(15, 23, 42, 0.98)
+  );
   backdrop-filter: blur(20px);
   border-radius: var(--radius-lg);
   border: 1px solid rgba(239, 68, 68, 0.5);
@@ -1241,9 +1245,11 @@ body {
 
 /* Custom Prompt Container */
 .custom-prompt {
-  background: linear-gradient(to bottom,
-          rgba(18, 24, 40, 0.98),
-          rgba(15, 23, 42, 0.98));
+  background: linear-gradient(
+    to bottom,
+    rgba(18, 24, 40, 0.98),
+    rgba(15, 23, 42, 0.98)
+  );
   backdrop-filter: blur(20px);
   border-radius: var(--radius-lg);
   border: 1px solid rgba(148, 163, 184, 0.3);
@@ -1346,4 +1352,153 @@ body {
   }
 }
 
+/* ========================================
+   Users Modal Styles
+   ======================================== */
 
+.users-modal {
+  background: linear-gradient(
+    to bottom,
+    rgba(18, 24, 40, 0.98),
+    rgba(15, 23, 42, 0.98)
+  );
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+  width: 90%;
+  max-width: 900px;
+  padding: 32px;
+  position: relative;
+  animation: slideUp 0.3s ease;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.users-modal-title {
+  margin: 0 0 24px;
+  font-size: 1.5rem;
+  color: var(--text-main);
+}
+
+.users-filter-section {
+  margin-bottom: 20px;
+}
+
+.users-search-input {
+  width: 100%;
+  max-width: 400px;
+}
+
+.users-table-container {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.users-table th {
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: left;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.users-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.users-table tr:hover {
+  background: rgba(148, 163, 184, 0.05);
+}
+
+.users-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.users-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.users-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--primary), #4ade80);
+  color: #052e16;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.role-badge.admin {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.role-badge.user {
+  background: rgba(56, 189, 248, 0.15);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.users-detail-button {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.users-detail-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.users-loading,
+.users-error,
+.users-empty {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-muted);
+}

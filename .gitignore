@@ -37,3 +37,5 @@ serviceAccountKey.json
 auth-translations.json
 upload_auth_manual.js
 rootbridge-9b225-default-rtdb-export.json
+upload_admin.cjs
+admin-translations.json

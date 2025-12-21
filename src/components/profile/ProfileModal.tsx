@@ -7,13 +7,16 @@ import { Toast, type ToastType } from '../common/Toast'
 import { ConfirmDialog } from '../common/ConfirmDialog'
 import { CustomPrompt } from '../common/CustomPrompt'
 
+import type { UserProfile } from '../../types_interfaces/userProfile'
+
 interface ProfileModalProps {
   isOpen: boolean
   onClose: () => void
+  targetProfile?: UserProfile
 }
 
-export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, userProfile, updateProfile, uploadProfilePhoto, changePassword, deleteAccount } = useAuth()
+export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, targetProfile }) => {
+  const { userProfile: currentUserProfile, updateProfile, uploadProfilePhoto, changePassword, deleteAccount } = useAuth()
   const { t } = useI18n()
 
   const [name, setName] = useState('')
@@ -27,15 +30,20 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
   const [showNewPasswordPrompt, setShowNewPasswordPrompt] = useState(false)
   const [currentPasswordTemp, setCurrentPasswordTemp] = useState('')
 
+  // 읽기 전용 모드 여부 (targetProfile이 있으면 True)
+  const isReadOnly = !!targetProfile
+  // 표시할 프로필 (targetProfile 혹은 현재 로그인한 사용자 프로필)
+  const displayProfile = targetProfile || currentUserProfile
+
   // 프로필 데이터 초기화
   useEffect(() => {
-    if (isOpen && userProfile) {
-      setName(userProfile.name || '')
-      setBio(userProfile.bio || '')
-      setImagePreview(userProfile.photoURL || null)
+    if (isOpen && displayProfile) {
+      setName(displayProfile.name || '')
+      setBio(displayProfile.bio || '')
+      setImagePreview(displayProfile.photoURL || null)
       setImageFile(null)
     }
-  }, [isOpen, userProfile])
+  }, [isOpen, displayProfile])
 
   // ESC 키로 모달 닫기
   useEffect(() => {
@@ -65,6 +73,8 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (isReadOnly) return // 읽기 전용이면 무시
+
     const file = e.target.files?.[0]
     if (file) {
       // 파일 크기 제한 (5MB)
@@ -92,6 +102,8 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (isReadOnly) return
+
     setLoading(true)
 
     try {
@@ -177,30 +189,35 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
             ✕
           </button>
 
-          <h2 className="profile-modal-title">{t('profile.title')}</h2>
+          <h2 className="profile-modal-title">
+            {isReadOnly ? 'User Profile' : t('profile.title')}
+          </h2>
 
           <form className="profile-form" onSubmit={handleSubmit}>
             {/* 프로필 이미지 */}
-            <div className="profile-image-section">
+            <div className={`profile-image-section ${isReadOnly ? 'readonly' : ''}`}>
               <div className="profile-image-preview">
                 {imagePreview ? (
                   <img src={imagePreview} alt="Profile" />
                 ) : (
                   <div className="profile-image-placeholder">
-                    {currentUser?.email?.charAt(0).toUpperCase()}
+                    {displayProfile?.email?.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
-              <label className="profile-upload-button">
-                {t('profile.uploadPhoto')}
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="user"
-                  onChange={handleImageChange}
-                  style={{ display: 'none' }}
-                />
-              </label>
+
+              {!isReadOnly && (
+                <label className="profile-upload-button">
+                  {t('profile.uploadPhoto')}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="user"
+                    onChange={handleImageChange}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              )}
             </div>
 
             {/* 이름 */}
@@ -213,8 +230,36 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="name"
+                readOnly={isReadOnly}
+                disabled={isReadOnly}
               />
             </div>
+
+            {/* 이메일 (읽기 전용 표시) */}
+            <div className="auth-form-group">
+              <label>Email</label>
+              <input
+                type="text"
+                className="auth-input"
+                value={displayProfile?.email || ''}
+                readOnly
+                disabled
+              />
+            </div>
+
+            {/* 권한 (Admin Only) */}
+            {isReadOnly && (
+              <div className="auth-form-group">
+                <label>Role</label>
+                <input
+                  type="text"
+                  className="auth-input"
+                  value={displayProfile?.role || 'user'}
+                  readOnly
+                  disabled
+                />
+              </div>
+            )}
 
             {/* 자기소개 */}
             <div className="auth-form-group">
@@ -225,31 +270,38 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 rows={4}
+                readOnly={isReadOnly}
+                disabled={isReadOnly}
               />
             </div>
 
-            {/* 저장 버튼 */}
-            <button type="submit" className="auth-button" disabled={loading}>
-              {loading ? '...' : t('profile.save')}
-            </button>
+            {/* 버튼 그룹 (수정 모드일 때만 표시) */}
+            {!isReadOnly && (
+              <>
+                {/* 저장 버튼 */}
+                <button type="submit" className="auth-button" disabled={loading}>
+                  {loading ? '...' : t('profile.save')}
+                </button>
 
-            {/* 비밀번호 변경 */}
-            <button
-              type="button"
-              className="profile-secondary-button"
-              onClick={handleChangePassword}
-            >
-              {t('profile.changePassword')}
-            </button>
+                {/* 비밀번호 변경 */}
+                <button
+                  type="button"
+                  className="profile-secondary-button"
+                  onClick={handleChangePassword}
+                >
+                  {t('profile.changePassword')}
+                </button>
 
-            {/* 계정 탈퇴 */}
-            <button
-              type="button"
-              className="profile-delete-button"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              {t('profile.deleteAccount')}
-            </button>
+                {/* 계정 탈퇴 */}
+                <button
+                  type="button"
+                  className="profile-delete-button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  {t('profile.deleteAccount')}
+                </button>
+              </>
+            )}
           </form>
         </div>
       </div>

@@ -185,6 +185,26 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
 }
 
 /**
+ * 모든 사용자 프로필 조회 (Admin only)
+ */
+export async function getAllUserProfiles(): Promise<UserProfile[]> {
+  try {
+    const { collection, getDocs } = await import('firebase/firestore')
+    const querySnapshot = await getDocs(collection(firestore, 'user_profile'))
+
+    const users: UserProfile[] = []
+    querySnapshot.forEach((doc) => {
+      users.push(doc.data() as UserProfile)
+    })
+
+    return users
+  } catch (err) {
+    console.error('Error fetching all user profiles:', err)
+    throw err
+  }
+}
+
+/**
  * Firestore에서 사용자 프로필 업데이트
  */
 export async function updateUserProfile(

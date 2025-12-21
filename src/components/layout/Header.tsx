@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { AuthModal } from '../auth/AuthModal'
 import { ProfileModal } from '../profile/ProfileModal'
+import { UsersModal } from '../admin/UsersModal'
 import { Toast } from '../common/Toast'
 
 export const Header: FC = () => {
@@ -12,6 +13,7 @@ export const Header: FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [isUsersModalOpen, setIsUsersModalOpen] = useState(false)
   const [showLogoutToast, setShowLogoutToast] = useState(false)
 
   const toggleLang = () => {
@@ -44,6 +46,11 @@ export const Header: FC = () => {
 
   const handleProfileClick = () => {
     setIsProfileModalOpen(true)
+    setIsMenuOpen(false)
+  }
+
+  const handleUsersClick = () => {
+    setIsUsersModalOpen(true)
     setIsMenuOpen(false)
   }
 
@@ -86,6 +93,15 @@ export const Header: FC = () => {
             {t('nav.about')}
           </a>
 
+          {userProfile?.role === 'admin' && (
+            <button
+              className="nav-link-button"
+              onClick={handleUsersClick}
+            >
+              Users
+            </button>
+          )}
+
           {currentUser ? (
             <>
               <span
@@ -121,6 +137,11 @@ export const Header: FC = () => {
       <ProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
+      />
+
+      <UsersModal
+        isOpen={isUsersModalOpen}
+        onClose={() => setIsUsersModalOpen(false)}
       />
 
       {showLogoutToast && (
