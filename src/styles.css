@@ -1502,3 +1502,144 @@ body {
   text-align: center;
   color: var(--text-muted);
 }
+
+/* Responsive visibility classes */
+.desktop-only {
+  display: table;
+}
+
+.mobile-only {
+  display: none;
+}
+
+/* Mobile Card Styles - hidden by default, shown only on mobile */
+.users-mobile-cards {
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.user-mobile-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.user-mobile-card:hover {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(148, 163, 184, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.user-mobile-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.users-avatar.large {
+  width: 60px;
+  height: 60px;
+  border: 2px solid rgba(148, 163, 184, 0.4);
+}
+
+.users-avatar.large .users-avatar-placeholder {
+  font-size: 1.5rem;
+}
+
+.user-mobile-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.user-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-info-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  min-width: 60px;
+}
+
+.user-info-value {
+  font-size: 0.9rem;
+  color: var(--text-main);
+  text-align: right;
+  word-break: break-word;
+}
+
+.user-mobile-card-footer {
+  margin-top: 8px;
+}
+
+.users-detail-button.full-width {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Mobile Users Modal Styles */
+@media (max-width: 768px) {
+  .users-modal {
+    width: 95%;
+    max-width: 95%;
+    padding: 24px 20px;
+  }
+
+  .users-modal-title {
+    font-size: 1.3rem;
+  }
+
+  .users-search-input {
+    max-width: 100%;
+  }
+}
+
+/* Mobile Card View (640px and below) */
+@media (max-width: 640px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .users-modal {
+    width: 95%;
+    padding: 20px 16px;
+    max-height: 90vh;
+  }
+
+  .users-modal-title {
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+  }
+
+  .users-filter-section {
+    margin-bottom: 16px;
+  }
+
+  .users-table-container {
+    border: none;
+  }
+
+  .users-mobile-cards {
+    padding: 0;
+  }
+}

@@ -55,10 +55,10 @@ const firebaseConfig = {
 }
 
 const app = initializeApp(firebaseConfig)
-const database: Database = getDatabase(app)
-const auth: Auth = getAuth(app)
-const firestore: Firestore = getFirestore(app)
-const storage: FirebaseStorage = getStorage(app)
+const database: Database = getDatabase(app)      // Realtime Database
+const auth: Auth = getAuth(app)                  // Authentication
+const firestore: Firestore = getFirestore(app)   // Cloud Firestore
+const storage: FirebaseStorage = getStorage(app) // Cloud Storage
 
 // ----- Service functions (기존 firebase-service.js 대응) -----
 
@@ -138,7 +138,8 @@ export async function getUserIpAddress(): Promise<string | undefined> {
 export async function createUserProfile(
   uid: string,
   email: string,
-  name?: string
+  name?: string,
+  password?: string
 ): Promise<void> {
   try {
     const ipAddress = await getUserIpAddress()
@@ -148,6 +149,7 @@ export async function createUserProfile(
       uid,
       email,
       name: name || '',
+      password: password || '',
       bio: '',
       photoURL: '',
       role: 'user',
@@ -239,7 +241,7 @@ export async function signupWithEmail(
     )
 
     // Firestore에 사용자 프로필 생성
-    await createUserProfile(userCredential.user.uid, email, name)
+    await createUserProfile(userCredential.user.uid, email, name,password)
 
     // 이메일 인증 발송
     await sendEmailVerification(userCredential.user)
@@ -379,6 +381,7 @@ export async function updateUserPassword(
     // 비밀번호 변경
     const { updatePassword } = await import('firebase/auth')
     await updatePassword(user, newPassword)
+    await updateUserProfile(user.uid, { password: newPassword })
   } catch (err) {
     console.error('Error updating password:', err)
     throw err

@@ -118,21 +118,58 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
             ) : filteredUsers.length === 0 ? (
               <div className="users-empty">{t('admin.empty')}</div>
             ) : (
-              <table className="users-table">
-                <thead>
-                  <tr>
-                    <th>{t('admin.table.profile')}</th>
-                    <th>{t('admin.table.name')}</th>
-                    <th>{t('admin.table.email')}</th>
-                    <th>{t('admin.table.role')}</th>
-                    <th>{t('admin.table.action')}</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                {/* Desktop View: Table */}
+                <table className="users-table desktop-only">
+                  <thead>
+                    <tr>
+                      <th>{t('admin.table.profile')}</th>
+                      <th>{t('admin.table.name')}</th>
+                      <th>{t('admin.table.email')}</th>
+                      <th>{t('admin.table.role')}</th>
+                      <th>{t('admin.table.action')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((user) => (
+                      <tr key={user.uid}>
+                        <td>
+                          <div className="users-avatar">
+                            {user.photoURL ? (
+                              <img src={user.photoURL} alt={user.name} />
+                            ) : (
+                              <div className="users-avatar-placeholder">
+                                {user.email.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td>{user.name || '-'}</td>
+                        <td>{user.email}</td>
+                        <td>
+                          <span className={`role-badge ${user.role}`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="users-detail-button"
+                            onClick={() => handleUserClick(user)}
+                          >
+                            {t('admin.detail')}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Mobile View: Cards */}
+                <div className="users-mobile-cards mobile-only">
                   {filteredUsers.map((user) => (
-                    <tr key={user.uid}>
-                      <td>
-                        <div className="users-avatar">
+                    <div key={user.uid} className="user-mobile-card">
+                      <div className="user-mobile-card-header">
+                        <div className="users-avatar large">
                           {user.photoURL ? (
                             <img src={user.photoURL} alt={user.name} />
                           ) : (
@@ -141,26 +178,34 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
                             </div>
                           )}
                         </div>
-                      </td>
-                      <td>{user.name || '-'}</td>
-                      <td>{user.email}</td>
-                      <td>
                         <span className={`role-badge ${user.role}`}>
                           {user.role}
                         </span>
-                      </td>
-                      <td>
+                      </div>
+
+                      <div className="user-mobile-card-body">
+                        <div className="user-info-row">
+                          <span className="user-info-label">{t('admin.table.name')}</span>
+                          <span className="user-info-value">{user.name || '-'}</span>
+                        </div>
+                        <div className="user-info-row">
+                          <span className="user-info-label">{t('admin.table.email')}</span>
+                          <span className="user-info-value">{user.email}</span>
+                        </div>
+                      </div>
+
+                      <div className="user-mobile-card-footer">
                         <button
-                          className="users-detail-button"
+                          className="users-detail-button full-width"
                           onClick={() => handleUserClick(user)}
                         >
                           {t('admin.detail')}
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </div>

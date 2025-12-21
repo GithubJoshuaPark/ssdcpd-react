@@ -5,6 +5,7 @@ export interface UserProfile {
   email: string
   name?: string
   bio?: string
+  password?: string
   photoURL?: string
   role: 'user' | 'admin'
   email_verified: boolean

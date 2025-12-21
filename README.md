@@ -504,7 +504,7 @@ Components
 
 - [React](https://react.dev/) - UI 라이브러리
 - [Vite](https://vite.dev/) - 빌드 도구
-- [Firebase](https://firebase.google.com/) - 백엔드 서비스
+- [Firebase](https://firebase.google.com/) - 백엔드 BaaS서비스
 - [LG Smart Font](https://www.lge.co.kr/) - 타이포그래피
 
 ---
