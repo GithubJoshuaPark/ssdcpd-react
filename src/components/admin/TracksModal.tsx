@@ -6,7 +6,6 @@ import type { Track } from '../../types_interfaces/track'
 import { TrackFormModal } from './TrackFormModal.tsx'
 import { Toast } from '../common/Toast'
 import { ConfirmDialog } from '../common/ConfirmDialog'
-import { useI18n } from '../../i18n/useI18n'
 
 interface TracksModalProps {
   isOpen: boolean
@@ -14,7 +13,6 @@ interface TracksModalProps {
 }
 
 export const TracksModal: FC<TracksModalProps> = ({ isOpen, onClose }) => {
-  const { t } = useI18n()
   const [tracks, setTracks] = useState<Track[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
