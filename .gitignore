@@ -30,6 +30,8 @@ firebase_realtime_db_rules_1.json
 firebase_realtime_db_rules_2.json
 firebase_realtime_db_rules_3.json
 firebase_realtime_db_rules_4.json
+firestore_database_rules.json
+firebase_storage_rules.json
 update_auth_translations.cjs
 update_profile_translations.cjs
 upload_auth.js
