@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../../i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { AuthModal } from '../auth/AuthModal'
@@ -15,6 +15,9 @@ export const Header: FC = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false)
   const [showLogoutToast, setShowLogoutToast] = useState(false)
+  const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false)
+
+  const adminDropdownRef = useRef<HTMLDivElement>(null)
 
   const toggleLang = () => {
     setLang(lang === 'en' ? 'ko' : 'en')
@@ -52,7 +55,36 @@ export const Header: FC = () => {
   const handleUsersClick = () => {
     setIsUsersModalOpen(true)
     setIsMenuOpen(false)
+    setIsAdminDropdownOpen(false)
   }
+
+  const toggleAdminDropdown = () => {
+    setIsAdminDropdownOpen((prev) => !prev)
+  }
+
+  // Click outside to close admin dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isAdminDropdownOpen && adminDropdownRef.current && !adminDropdownRef.current.contains(event.target as Node)) {
+        setIsAdminDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isAdminDropdownOpen])
+
+  // ESC key to close admin dropdown
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isAdminDropdownOpen) {
+        setIsAdminDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isAdminDropdownOpen])
 
   return (
     <>
@@ -94,12 +126,32 @@ export const Header: FC = () => {
           </a>
 
           {userProfile?.role === 'admin' && (
-            <button
-              className="nav-link-button"
-              onClick={handleUsersClick}
-            >
-              Users
-            </button>
+            <div className="admin-dropdown-container" ref={adminDropdownRef}>
+              <button
+                className="admin-dropdown-trigger"
+                onClick={toggleAdminDropdown}
+                aria-expanded={isAdminDropdownOpen}
+                aria-haspopup="true"
+              >
+                Admin
+                <span className={`dropdown-arrow ${isAdminDropdownOpen ? 'open' : ''}`}>▼</span>
+              </button>
+
+              {isAdminDropdownOpen && (
+                <div className="admin-dropdown-menu">
+                  <button
+                    className="admin-dropdown-item"
+                    onClick={handleUsersClick}
+                  >
+                    👥 Users
+                  </button>
+                  {/* Future admin features can be added here */}
+                  {/* <button className="admin-dropdown-item" onClick={handleSettingsClick}>
+                    ⚙️ Settings
+                  </button> */}
+                </div>
+              )}
+            </div>
           )}
 
           {currentUser ? (
