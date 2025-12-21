@@ -36,6 +36,10 @@ import {
     deleteObject,
     type FirebaseStorage,
 } from 'firebase/storage'
+import {
+    getFunctions,
+    httpsCallable,
+} from 'firebase/functions'
 
 // ----- 타입 가져오기 -----
 import type { TranslationsByLang } from '../types_interfaces/translations'
@@ -59,6 +63,7 @@ const database: Database = getDatabase(app)      // Realtime Database
 const auth: Auth = getAuth(app)                  // Authentication
 const firestore: Firestore = getFirestore(app)   // Cloud Firestore
 const storage: FirebaseStorage = getStorage(app) // Cloud Storage
+const functions = getFunctions(app)              // Cloud Functions
 
 // ----- Service functions (기존 firebase-service.js 대응) -----
 
@@ -416,6 +421,54 @@ export async function deleteUserAccount(
   } catch (err) {
     console.error('Error deleting user account:', err)
     throw err
+  }
+}
+
+/**
+ * 관리자가 다른 사용자 계정 삭제 (Firestore 문서 및 Storage 이미지만 삭제)
+ * Auth 계정은 현재 로그인한 사용자만 삭제할 수 있으므로 제외
+ */
+export async function deleteUserAccountByAdmin(
+  uid: string,
+  photoURL?: string
+): Promise<void> {
+  try {
+    // 1. Storage 이미지 삭제 (있는 경우)
+    if (photoURL) {
+      await deleteProfileImage(photoURL)
+    }
+
+    // 2. Firestore 문서 삭제
+    const docRef = doc(firestore, 'user_profile', uid)
+    await deleteDoc(docRef)
+
+    // Note: Auth 계정은 삭제하지 않음 (현재 로그인한 사용자만 자신의 Auth 계정 삭제 가능)
+  } catch (err) {
+    console.error('Error deleting user account by admin:', err)
+    throw err
+  }
+}
+
+/**
+ * 관리자가 Cloud Function을 통해 사용자 계정 완전 삭제
+ * (Auth + Firestore + Storage 모두 삭제)
+ * Cloud Function이 배포되어 있어야 사용 가능
+ */
+export async function deleteUserByAdminFunction(
+  uid: string,
+  photoURL?: string
+): Promise<void> {
+  try {
+    const deleteUserCallable = httpsCallable<
+      { uid: string; photoURL?: string },
+      { success: boolean; message: string }
+    >(functions, 'deleteUserByAdmin')
+
+    const result = await deleteUserCallable({ uid, photoURL })
+    console.log('User deleted via Cloud Function:', result.data)
+  } catch (error) {
+    console.error('Error calling deleteUserByAdmin function:', error)
+    throw error
   }
 }
 

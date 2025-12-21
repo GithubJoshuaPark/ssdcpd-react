@@ -13,9 +13,10 @@ interface ProfileModalProps {
   isOpen: boolean
   onClose: () => void
   targetProfile?: UserProfile
+  onUserDeleted?: () => void  // 사용자 삭제 후 콜백 (UsersModal 새로고침용)
 }
 
-export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, targetProfile }) => {
+export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, targetProfile, onUserDeleted }) => {
   const { userProfile: currentUserProfile, updateProfile, uploadProfilePhoto, changePassword, deleteAccount } = useAuth()
   const { t } = useI18n()
 
@@ -34,6 +35,10 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, targetPro
   const isReadOnly = !!targetProfile
   // 표시할 프로필 (targetProfile 혹은 현재 로그인한 사용자 프로필)
   const displayProfile = targetProfile || currentUserProfile
+  // 현재 사용자가 관리자인지 확인
+  const isCurrentUserAdmin = currentUserProfile?.role === 'admin'
+  // 삭제 버튼 표시 여부: 자신의 프로필이거나, 관리자가 다른 사용자를 보는 경우
+  const canDelete = !isReadOnly || (isReadOnly && isCurrentUserAdmin)
 
   // 프로필 데이터 초기화
   useEffect(() => {
@@ -169,12 +174,31 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, targetPro
 
   const handleDeleteAccount = async () => {
     try {
-      await deleteAccount()
-      setToast({ message: t('profile.deleteSuccess'), type: 'success' })
-      setTimeout(() => {
-        onClose()
-        // 로그인 모달은 AuthProvider에서 자동으로 처리됨
-      }, 1500)
+      if (isReadOnly && isCurrentUserAdmin && displayProfile) {
+        // 관리자가 다른 사용자 삭제
+        //const { deleteUserAccountByAdmin } = await import('../../services/firebaseService')
+        //await deleteUserAccountByAdmin(displayProfile.uid, displayProfile.photoURL)
+
+        // ⭐ Cloud Function 사용 (Auth 계정까지 완전 삭제)
+        const { deleteUserByAdminFunction } = await import('../../services/firebaseService')
+        await deleteUserByAdminFunction(displayProfile.uid, displayProfile.photoURL)
+
+
+        setToast({ message: t('profile.deleteSuccess'), type: 'success' })
+        setTimeout(() => {
+          onClose()
+          // UsersModal 새로고침
+          onUserDeleted?.()
+        }, 1500)
+      } else {
+        // 자신의 계정 삭제
+        await deleteAccount()
+        setToast({ message: t('profile.deleteSuccess'), type: 'success' })
+        setTimeout(() => {
+          onClose()
+          // 로그인 모달은 AuthProvider에서 자동으로 처리됨
+        }, 1500)
+      }
     } catch (error) {
       console.error('Account deletion error:', error)
       setToast({ message: 'Failed to delete account', type: 'error' })
@@ -275,7 +299,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, targetPro
               />
             </div>
 
-            {/* 버튼 그룹 (수정 모드일 때만 표시) */}
+            {/* 버튼 그룹 */}
             {!isReadOnly && (
               <>
                 {/* 저장 버튼 */}
@@ -301,6 +325,17 @@ export const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, targetPro
                   {t('profile.deleteAccount')}
                 </button>
               </>
+            )}
+
+            {/* 관리자가 다른 사용자를 볼 때 삭제 버튼 */}
+            {isReadOnly && canDelete && (
+              <button
+                type="button"
+                className="profile-delete-button"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                {t('profile.deleteAccount')}
+              </button>
             )}
           </form>
         </div>

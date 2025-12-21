@@ -1,6 +1,6 @@
 // src/components/admin/UsersModal.tsx
 import type { FC, ChangeEvent } from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getAllUserProfiles } from '../../services/firebaseService'
 import type { UserProfile } from '../../types_interfaces/userProfile'
 import { ProfileModal } from '../profile/ProfileModal'
@@ -20,11 +20,25 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const loadUsers = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await getAllUserProfiles()
+      setUsers(data)
+    } catch (err) {
+      console.error('Failed to load users:', err)
+      setError(t('admin.error') || 'Failed to load user list.')
+    } finally {
+      setLoading(false)
+    }
+  }, [t])
+
   useEffect(() => {
     if (isOpen) {
       loadUsers()
     }
-  }, [isOpen])
+  }, [isOpen, loadUsers])
 
   // ESC 키로 모달 닫기
   useEffect(() => {
@@ -50,20 +64,6 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
       document.body.style.overflow = ''
     }
   }, [isOpen])
-
-  const loadUsers = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await getAllUserProfiles()
-      setUsers(data)
-    } catch (err) {
-      console.error('Failed to load users:', err)
-      setError(t('admin.error') || 'Failed to load user list.')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
@@ -216,6 +216,10 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
         isOpen={!!selectedUser}
         onClose={closeProfileModal}
         targetProfile={selectedUser || undefined}
+        onUserDeleted={() => {
+          // 사용자 삭제 후 목록 새로고침
+          loadUsers()
+        }}
       />
 
       {error && (
