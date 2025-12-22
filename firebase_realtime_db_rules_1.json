@@ -1,0 +1,48 @@
+{
+    "rules": {
+        "translations": {
+            ".read": true,
+            ".write": false
+        },
+        "tracks": {
+            ".read": true,
+            ".write": false
+        },
+        "compliance_responses": {
+            ".read": true,
+            ".write": "auth != null"
+        },
+        "compliances": {
+            ".read": true,
+            ".write": "auth != null"
+        },
+        "home": {
+            ".read": true,
+            ".write": "auth != null"
+        },
+        "infrastructure": {
+            ".read": true,
+            ".write": "auth != null"
+        },
+        "infrastructure_responses": {
+            ".read": true,
+            ".write": "auth != null"
+        },
+        "questions": {
+            ".read": true,
+            ".write": "auth != null"
+        },
+        "regulations": {
+            ".read": true,
+            ".write": "auth != null"
+        },
+        "regulation_responses": {
+            ".read": true,
+            ".write": "auth != null"
+        },
+        "responses": {
+            ".read": true,
+            ".write": "auth != null"
+        }
+    }
+}
