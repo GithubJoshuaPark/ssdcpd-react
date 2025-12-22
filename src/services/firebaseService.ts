@@ -39,6 +39,8 @@ import {
 } from "firebase/storage";
 
 // ----- 타입 가져오기 -----
+import type { Contact } from "../types_interfaces/contact";
+import type { Project } from "../types_interfaces/project";
 import type { Track } from "../types_interfaces/track";
 import type { TranslationsByLang } from "../types_interfaces/translations";
 import type { UserProfile } from "../types_interfaces/userProfile";
@@ -527,6 +529,237 @@ export async function deleteUserByAdminFunction(
   } catch (error) {
     console.error("Error calling deleteUserByAdmin function:", error);
     throw error;
+  }
+}
+
+// ----- Contact functions -----
+
+/**
+ * Create a new contact message
+ */
+export async function createContact(
+  contact: Omit<Contact, "id">
+): Promise<string> {
+  try {
+    const { push, set } = await import("firebase/database");
+    const contactsRef = ref(database, "contacts");
+    const newContactRef = push(contactsRef);
+
+    if (!newContactRef.key) {
+      throw new Error("Failed to generate contact ID");
+    }
+
+    await set(newContactRef, contact);
+    return newContactRef.key;
+  } catch (err) {
+    console.error("Error creating contact:", err);
+    throw err;
+  }
+}
+
+/**
+ * Get contacts for a specific user
+ */
+export async function getContactsByUid(uid: string): Promise<Contact[]> {
+  try {
+    const { query, orderByChild, equalTo } = await import("firebase/database");
+    const contactsRef = ref(database, "contacts");
+    const userContactsQuery = query(
+      contactsRef,
+      orderByChild("uid"),
+      equalTo(uid)
+    );
+    const snapshot = await get(userContactsQuery);
+
+    if (!snapshot.exists()) {
+      return [];
+    }
+
+    const contactsObj = snapshot.val() as Record<string, unknown>;
+    return Object.entries(contactsObj).map(([id, raw]) => {
+      const value = raw as Record<string, unknown>;
+      return {
+        id,
+        ...value,
+      } as Contact;
+    });
+  } catch (err) {
+    console.error("Error fetching user contacts:", err);
+    throw err;
+  }
+}
+
+/**
+ * Update a contact message
+ */
+export async function updateContact(
+  id: string,
+  updates: Partial<Contact>
+): Promise<void> {
+  try {
+    const { update } = await import("firebase/database");
+    const contactRef = ref(database, `contacts/${id}`);
+
+    const updateData = { ...updates };
+    delete updateData.id;
+
+    await update(contactRef, updateData);
+  } catch (err) {
+    console.error("Error updating contact:", err);
+    throw err;
+  }
+}
+
+/**
+ * Delete a contact message
+ */
+export async function deleteContact(id: string): Promise<void> {
+  try {
+    const { remove } = await import("firebase/database");
+    const contactRef = ref(database, `contacts/${id}`);
+    await remove(contactRef);
+  } catch (err) {
+    console.error("Error deleting contact:", err);
+    throw err;
+  }
+}
+
+/**
+ * Get all contacts (for admin)
+ */
+export async function getAllContacts(): Promise<Contact[]> {
+  try {
+    const contactsRef = ref(database, "contacts");
+    const snapshot = await get(contactsRef);
+
+    if (!snapshot.exists()) {
+      return [];
+    }
+
+    const contactsObj = snapshot.val() as Record<string, unknown>;
+    return Object.entries(contactsObj).map(([id, raw]) => {
+      const value = raw as Record<string, unknown>;
+      return {
+        id,
+        ...value,
+      } as Contact;
+    });
+  } catch (err) {
+    console.error("Error fetching all contacts:", err);
+    throw err;
+  }
+}
+
+/**
+ * Update contact response (for admin)
+ */
+export async function updateContactResponse(
+  id: string,
+  response: string
+): Promise<void> {
+  try {
+    const { update } = await import("firebase/database");
+    const contactRef = ref(database, `contacts/${id}`);
+    await update(contactRef, {
+      response,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error("Error updating contact response:", err);
+    throw err;
+  }
+}
+/**
+ * Project CRUD Functions
+ */
+
+export async function createProject(
+  project: Omit<Project, "id">
+): Promise<string> {
+  try {
+    const { push, set } = await import("firebase/database");
+    const projectsRef = ref(database, "projects");
+    const newProjectRef = push(projectsRef);
+
+    if (!newProjectRef.key) {
+      throw new Error("Failed to generate project ID");
+    }
+
+    await set(newProjectRef, project);
+    return newProjectRef.key;
+  } catch (err) {
+    console.error("Error creating project:", err);
+    throw err;
+  }
+}
+
+export async function getAllProjects(): Promise<Project[]> {
+  try {
+    const projectsRef = ref(database, "projects");
+    const snapshot = await get(projectsRef);
+
+    if (!snapshot.exists()) {
+      return [];
+    }
+
+    const projectsObj = snapshot.val() as Record<string, unknown>;
+    return Object.entries(projectsObj).map(([id, raw]) => {
+      const value = raw as Record<string, unknown>;
+      return {
+        id,
+        ...value,
+      } as Project;
+    });
+  } catch (err) {
+    console.error("Error fetching all projects:", err);
+    throw err;
+  }
+}
+
+export async function updateProject(
+  id: string,
+  updates: Partial<Project>
+): Promise<void> {
+  try {
+    const { update } = await import("firebase/database");
+    const projectRef = ref(database, `projects/${id}`);
+    await update(projectRef, updates);
+  } catch (err) {
+    console.error("Error updating project:", err);
+    throw err;
+  }
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  try {
+    const { remove } = await import("firebase/database");
+    const projectRef = ref(database, `projects/${id}`);
+    await remove(projectRef);
+  } catch (err) {
+    console.error("Error deleting project:", err);
+    throw err;
+  }
+}
+
+export async function uploadProjectImage(file: File): Promise<string> {
+  const {
+    uploadBytes,
+    getDownloadURL,
+    ref: sRef,
+  } = await import("firebase/storage");
+  const fileExtension = file.name.split(".").pop();
+  const fileName = `projects/${Date.now()}_${Math.random()
+    .toString(36)
+    .substring(2)}.${fileExtension}`;
+  const storageRef = sRef(storage, fileName);
+
+  try {
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+  } catch (err) {
+    console.error("Error uploading project image:", err);
+    throw err;
   }
 }
 

@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
 import { useI18n } from "../../i18n/useI18n";
+import { ContactsModal } from "../admin/ContactsModal";
+import { ProjectsModal } from "../admin/ProjectsModal";
 import { TracksModal } from "../admin/TracksModal";
 import { UsersModal } from "../admin/UsersModal";
 import { AuthModal } from "../auth/AuthModal";
@@ -18,6 +20,8 @@ export const Header: FC = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [isTracksModalOpen, setIsTracksModalOpen] = useState(false);
+  const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
+  const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [showLogoutToast, setShowLogoutToast] = useState(false);
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const [isCpdDropdownOpen, setIsCpdDropdownOpen] = useState(false);
@@ -66,6 +70,18 @@ export const Header: FC = () => {
 
   const handleTracksClick = () => {
     setIsTracksModalOpen(true);
+    setIsMenuOpen(false);
+    setIsAdminDropdownOpen(false);
+  };
+
+  const handleContactsClick = () => {
+    setIsContactsModalOpen(true);
+    setIsMenuOpen(false);
+    setIsAdminDropdownOpen(false);
+  };
+
+  const handleProjectsClick = () => {
+    setIsProjectsModalOpen(true);
     setIsMenuOpen(false);
     setIsAdminDropdownOpen(false);
   };
@@ -239,6 +255,18 @@ export const Header: FC = () => {
                   >
                     📚 Tracks
                   </button>
+                  <button
+                    className="admin-dropdown-item"
+                    onClick={handleContactsClick}
+                  >
+                    ✉️ Contacts
+                  </button>
+                  <button
+                    className="admin-dropdown-item"
+                    onClick={handleProjectsClick}
+                  >
+                    🚀 Projects
+                  </button>
                 </div>
               )}
             </div>
@@ -289,6 +317,16 @@ export const Header: FC = () => {
       <TracksModal
         isOpen={isTracksModalOpen}
         onClose={() => setIsTracksModalOpen(false)}
+      />
+
+      <ContactsModal
+        isOpen={isContactsModalOpen}
+        onClose={() => setIsContactsModalOpen(false)}
+      />
+
+      <ProjectsModal
+        isOpen={isProjectsModalOpen}
+        onClose={() => setIsProjectsModalOpen(false)}
       />
 
       {showLogoutToast && (

@@ -1,16 +1,62 @@
 import type { FC } from "react";
+import { useState } from "react";
+import { AiOutlineCode } from "react-icons/ai";
+import {
+  FaAngular,
+  FaApple,
+  FaAws,
+  FaDatabase,
+  FaDocker,
+  FaGitAlt,
+  FaJava,
+  FaNodeJs,
+  FaReact,
+  FaSwift,
+} from "react-icons/fa";
+import {
+  SiAndroidstudio,
+  SiExpress,
+  SiFirebase,
+  SiJavascript,
+  SiKotlin,
+  SiPython,
+  SiSpringboot,
+  SiSupabase,
+  SiSwift,
+  SiTailwindcss,
+  SiTypescript,
+} from "react-icons/si";
+import { VscSettingsGear } from "react-icons/vsc";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../auth/useAuth";
+import { AuthModal } from "../auth/AuthModal";
+import { LottieView } from "../common/LottieView";
+import { ContactModal } from "../contact/ContactModal";
+
+const LOTTIE_FILES = ["developer0.json", "contact0.json"];
 
 export const Intro: FC = () => {
+  const { currentUser } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+
+  const [randomLottie] = useState(
+    () => LOTTIE_FILES[Math.floor(Math.random() * LOTTIE_FILES.length)]
+  );
+
+  const handleContactClick = () => {
+    if (currentUser) {
+      setIsContactModalOpen(true);
+    } else {
+      setIsAuthModalOpen(true);
+    }
+  };
+
   return (
     <div className="intro-container">
       <section className="intro-hero">
         <div className="intro-illustration">
-          <img
-            src="/intro.png"
-            alt="Joshua Park Illustration"
-            className="intro-img"
-          />
+          <LottieView fileName={randomLottie} className="intro-lottie" />
         </div>
 
         <h1 className="intro-name">Hi, I'm Joshua Park</h1>
@@ -20,9 +66,9 @@ export const Intro: FC = () => {
           <p>Welcome! I'm an IT professional with</p>
           <p className="highlight-text">20+ years of expertise in:</p>
           <p className="expertise-tags">
-            <span className="expertise-tag">business analysis</span>,
-            <span className="expertise-tag">software development</span>, and
-            <span className="expertise-tag">project management</span>
+            <span className="expertise-tag">business analysis</span>
+            <span className="expertise-tag">, software development</span>
+            <span className="expertise-tag">&nbsp;and project management</span>
           </p>
           <p>I transform ideas into scalable solutions</p>
           <p>that drive business success.</p>
@@ -30,23 +76,64 @@ export const Intro: FC = () => {
       </section>
 
       <section className="tech-skills-section">
-        <h2 className="section-title">Technical Skills</h2>
+        <h2 className="section-title">Skills</h2>
         <div className="skills-grid">
+          {/* Langs */}
+          <div className="skill-card">
+            <h3>Langs</h3>
+            <div className="skill-items">
+              <div className="skill-item">
+                <AiOutlineCode /> C/C++/C#
+              </div>
+              <div className="skill-item">
+                <FaJava /> Java
+              </div>
+              <div className="skill-item">
+                <SiPython /> Python
+              </div>
+              <div className="skill-item">
+                <FaSwift /> Swift
+              </div>
+              <div className="skill-item">
+                <SiSwift /> SwiftUI
+              </div>
+              <div className="skill-item">
+                <SiKotlin /> Kotlin
+              </div>
+            </div>
+          </div>
+
+          {/* Native */}
+          <div className="skill-card">
+            <h3>Native</h3>
+            <div className="skill-items single-col">
+              <div className="skill-item">
+                <FaApple /> xCode
+              </div>
+              <div className="skill-item">
+                <SiAndroidstudio /> Android Studio
+              </div>
+            </div>
+          </div>
+
           {/* Frontend */}
           <div className="skill-card">
             <h3>Frontend</h3>
-            <div className="skill-items">
+            <div className="skill-items single-col">
               <div className="skill-item">
-                <span>⚛️</span> React
+                <SiJavascript /> JavaScript
               </div>
               <div className="skill-item">
-                <span>TS</span> TypeScript
+                <SiTypescript /> TypeScript
               </div>
               <div className="skill-item">
-                <span>🌊</span> Tailwind CSS
+                <FaReact /> React
               </div>
               <div className="skill-item">
-                <span>N</span> Next.js
+                <FaAngular /> Angular
+              </div>
+              <div className="skill-item">
+                <SiTailwindcss /> Tailwind
               </div>
             </div>
           </div>
@@ -56,35 +143,41 @@ export const Intro: FC = () => {
             <h3>Backend</h3>
             <div className="skill-items">
               <div className="skill-item">
-                <span>JS</span> Node.js
+                <FaNodeJs /> Node.js
               </div>
               <div className="skill-item">
-                <span>ex</span> Express
+                <SiExpress /> Express
               </div>
               <div className="skill-item">
-                <span>🍃</span> MongoDB
+                <SiSpringboot /> SpringBoot
               </div>
               <div className="skill-item">
-                <span>🔗</span> RESTful APIs
+                <SiFirebase /> Firebase
+              </div>
+              <div className="skill-item">
+                <SiSupabase /> Supabase
+              </div>
+              <div className="skill-item">
+                <FaDatabase /> RDBMS
               </div>
             </div>
           </div>
 
-          {/* Tools & Others */}
+          {/* Tools */}
           <div className="skill-card">
-            <h3>Tools & Others</h3>
-            <div className="skill-items">
+            <h3>Tools</h3>
+            <div className="skill-items single-col">
               <div className="skill-item">
-                <span>Git</span> Git
+                <FaGitAlt /> Git
               </div>
               <div className="skill-item">
-                <span>🐳</span> Docker
+                <FaDocker /> Docker
               </div>
               <div className="skill-item">
-                <span>aws</span> AWS
+                <FaAws /> AWS
               </div>
               <div className="skill-item">
-                <span>🔄</span> CI/CD
+                <VscSettingsGear /> CI/CD
               </div>
             </div>
           </div>
@@ -92,11 +185,26 @@ export const Intro: FC = () => {
       </section>
 
       <div className="intro-actions">
-        <button className="primary-btn contact-btn">Contact Me</button>
+        <button
+          className="primary-btn contact-btn"
+          onClick={handleContactClick}
+        >
+          Contact Me
+        </button>
         <Link to="/cpd" className="secondary-btn view-projects-btn">
           View Projects
         </Link>
       </div>
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      <ContactModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+      />
     </div>
   );
 };

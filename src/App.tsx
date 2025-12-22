@@ -1,5 +1,6 @@
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthProvider";
+import { ScrollToTop } from "./components/common/ScrollToTop";
 import { Footer } from "./components/layout/Footer";
 import { Header } from "./components/layout/Header";
 import { Cpd } from "./components/pages/Cpd";
@@ -14,6 +15,7 @@ function App() {
       <AuthProvider>
         <TracksProvider>
           <Router>
+            <ScrollToTop />
             <Header />
             <main>
               <Routes>
