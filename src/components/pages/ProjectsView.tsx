@@ -38,7 +38,7 @@ export const ProjectsView: FC = () => {
     <div
       className="projects-view-container"
       style={{
-        padding: "100px 20px 60px",
+        padding: "60px 20px 60px",
         maxWidth: "1200px",
         margin: "0 auto",
       }}
