@@ -224,13 +224,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
           {/* Form Section */}
           <div className="contact-form-side">
             <form onSubmit={handleSubmit} className="auth-form">
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "16px",
-                }}
-              >
+              <div className="form-grid">
                 <div className="auth-form-group">
                   <label>Project Name</label>
                   <input
@@ -255,13 +249,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "16px",
-                }}
-              >
+              <div className="form-grid">
                 <div className="auth-form-group">
                   <label>Start Date</label>
                   <input
@@ -298,13 +286,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                 />
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "16px",
-                }}
-              >
+              <div className="form-grid">
                 <div className="auth-form-group">
                   <label>Demo URL</label>
                   <input
@@ -331,25 +313,24 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
 
               <div className="auth-form-group">
                 <label>Project Image</label>
-                <div
-                  style={{ display: "flex", gap: "10px", alignItems: "center" }}
-                >
+                <div className="file-upload-group">
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleFileUpload}
                     className="auth-input"
-                    style={{ flex: 1 }}
+                    style={{ width: "100%" }}
                   />
                   {formData.imageUrl && (
                     <img
                       src={formData.imageUrl}
                       alt="Preview"
                       style={{
-                        width: "40px",
-                        height: "40px",
+                        width: "44px",
+                        height: "44px",
                         borderRadius: "4px",
                         objectFit: "cover",
+                        border: "1px solid var(--card-border)",
                       }}
                     />
                   )}

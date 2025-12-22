@@ -25,9 +25,11 @@ export const Header: FC = () => {
   const [showLogoutToast, setShowLogoutToast] = useState(false);
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const [isCpdDropdownOpen, setIsCpdDropdownOpen] = useState(false);
+  const [isHomeDropdownOpen, setIsHomeDropdownOpen] = useState(false);
 
   const adminDropdownRef = useRef<HTMLDivElement>(null);
   const cpdDropdownRef = useRef<HTMLDivElement>(null);
+  const homeDropdownRef = useRef<HTMLDivElement>(null);
 
   const toggleLang = () => {
     setLang(lang === "en" ? "ko" : "en");
@@ -86,14 +88,22 @@ export const Header: FC = () => {
     setIsAdminDropdownOpen(false);
   };
 
-  const toggleAdminDropdown = () => {
-    setIsAdminDropdownOpen(prev => !prev);
-    setIsCpdDropdownOpen(false);
-  };
-
   const toggleCpdDropdown = () => {
     setIsCpdDropdownOpen(prev => !prev);
     setIsAdminDropdownOpen(false);
+    setIsHomeDropdownOpen(false);
+  };
+
+  const toggleHomeDropdown = () => {
+    setIsHomeDropdownOpen(prev => !prev);
+    setIsAdminDropdownOpen(false);
+    setIsCpdDropdownOpen(false);
+  };
+
+  const toggleAdminDropdown = () => {
+    setIsAdminDropdownOpen(prev => !prev);
+    setIsCpdDropdownOpen(false);
+    setIsHomeDropdownOpen(false);
   };
 
   // Click outside to close admin dropdown
@@ -116,6 +126,14 @@ export const Header: FC = () => {
       ) {
         setIsCpdDropdownOpen(false);
       }
+
+      if (
+        isHomeDropdownOpen &&
+        homeDropdownRef.current &&
+        !homeDropdownRef.current.contains(target)
+      ) {
+        setIsHomeDropdownOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -128,6 +146,7 @@ export const Header: FC = () => {
       if (event.key === "Escape") {
         setIsAdminDropdownOpen(false);
         setIsCpdDropdownOpen(false);
+        setIsHomeDropdownOpen(false);
       }
     };
 
@@ -158,9 +177,46 @@ export const Header: FC = () => {
 
         {/* 내비게이션 */}
         <nav className={`nav-links ${isMenuOpen ? "active" : ""}`} id="navMenu">
-          <Link to="/" className="nav-item-link" onClick={handleNavClick}>
-            Home
-          </Link>
+          <div className="admin-dropdown-container" ref={homeDropdownRef}>
+            <button
+              className="admin-dropdown-trigger"
+              onClick={toggleHomeDropdown}
+              aria-expanded={isHomeDropdownOpen}
+              aria-haspopup="true"
+            >
+              Home
+              <span
+                className={`dropdown-arrow ${isHomeDropdownOpen ? "open" : ""}`}
+              >
+                ▼
+              </span>
+            </button>
+
+            {isHomeDropdownOpen && (
+              <div className="admin-dropdown-menu">
+                <Link
+                  to="/"
+                  className="admin-dropdown-item"
+                  onClick={() => {
+                    handleNavClick();
+                    setIsHomeDropdownOpen(false);
+                  }}
+                >
+                  🏠 Introduction
+                </Link>
+                <Link
+                  to="/projects"
+                  className="admin-dropdown-item"
+                  onClick={() => {
+                    handleNavClick();
+                    setIsHomeDropdownOpen(false);
+                  }}
+                >
+                  🚀 Projects
+                </Link>
+              </div>
+            )}
+          </div>
 
           <div className="admin-dropdown-container" ref={cpdDropdownRef}>
             <button

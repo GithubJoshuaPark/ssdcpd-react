@@ -2480,3 +2480,33 @@ body {
     max-height: 280px;
   }
 }
+
+/* Responsive Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.file-upload-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .file-upload-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .file-upload-group img {
+    width: 60px !important;
+    height: 60px !important;
+  }
+}

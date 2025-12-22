@@ -191,7 +191,7 @@ export const Intro: FC = () => {
         >
           Contact Me
         </button>
-        <Link to="/cpd" className="secondary-btn view-projects-btn">
+        <Link to="/projects" className="secondary-btn view-projects-btn">
           View Projects
         </Link>
       </div>
