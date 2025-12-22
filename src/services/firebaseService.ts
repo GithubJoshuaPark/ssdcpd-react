@@ -1,50 +1,47 @@
 // src/services/firebaseService.ts
-import { initializeApp } from 'firebase/app'
+import { initializeApp } from "firebase/app";
 import {
-    getDatabase,
-    ref,
-    get,
-    Database,
-    DataSnapshot,
-} from 'firebase/database'
+  createUserWithEmailAndPassword,
+  EmailAuthProvider,
+  getAuth,
+  reauthenticateWithCredential,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut,
+  type Auth,
+  type UserCredential,
+} from "firebase/auth";
 import {
-    getAuth,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    sendEmailVerification,
-    sendPasswordResetEmail,
-    EmailAuthProvider,
-    reauthenticateWithCredential,
-    type Auth,
-    type UserCredential,
-} from 'firebase/auth'
+  Database,
+  DataSnapshot,
+  get,
+  getDatabase,
+  ref,
+} from "firebase/database";
 import {
-    getFirestore,
-    doc,
-    setDoc,
-    getDoc,
-    updateDoc,
-    deleteDoc,
-    type Firestore,
-} from 'firebase/firestore'
+  deleteDoc,
+  doc,
+  getDoc,
+  getFirestore,
+  setDoc,
+  updateDoc,
+  type Firestore,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import {
-    getStorage,
-    ref as storageRef,
-    uploadBytes,
-    getDownloadURL,
-    deleteObject,
-    type FirebaseStorage,
-} from 'firebase/storage'
-import {
-    getFunctions,
-    httpsCallable,
-} from 'firebase/functions'
+  deleteObject,
+  getDownloadURL,
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  type FirebaseStorage,
+} from "firebase/storage";
 
 // ----- 타입 가져오기 -----
-import type { TranslationsByLang } from '../types_interfaces/translations'
-import type { Track } from '../types_interfaces/track'
-import type { UserProfile } from '../types_interfaces/userProfile'
+import type { Track } from "../types_interfaces/track";
+import type { TranslationsByLang } from "../types_interfaces/translations";
+import type { UserProfile } from "../types_interfaces/userProfile";
 
 // ----- Firebase 초기화 -----
 
@@ -54,109 +51,112 @@ const firebaseConfig = {
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL as string,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID as string,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string,
+  messagingSenderId: import.meta.env
+    .VITE_FIREBASE_MESSAGING_SENDER_ID as string,
   appId: import.meta.env.VITE_FIREBASE_APP_ID as string,
-}
+};
 
-const app = initializeApp(firebaseConfig)
-const database: Database = getDatabase(app)      // Realtime Database
-const auth: Auth = getAuth(app)                  // Authentication
-const firestore: Firestore = getFirestore(app)   // Cloud Firestore
-const storage: FirebaseStorage = getStorage(app) // Cloud Storage
-const functions = getFunctions(app)              // Cloud Functions
+const app = initializeApp(firebaseConfig);
+const database: Database = getDatabase(app); // Realtime Database
+const auth: Auth = getAuth(app); // Authentication
+const firestore: Firestore = getFirestore(app); // Cloud Firestore
+const storage: FirebaseStorage = getStorage(app); // Cloud Storage
+const functions = getFunctions(app); // Cloud Functions
 
 // ----- Service functions (기존 firebase-service.js 대응) -----
 
 // translations 전체
 export async function getAllTranslations(): Promise<TranslationsByLang | null> {
   try {
-    const snapshot: DataSnapshot = await get(ref(database, 'translations'))
+    const snapshot: DataSnapshot = await get(ref(database, "translations"));
 
     if (!snapshot.exists()) {
-      console.warn('No translations data available')
-      return null
+      console.warn("No translations data available");
+      return null;
     }
 
-    return snapshot.val() as TranslationsByLang
+    return snapshot.val() as TranslationsByLang;
   } catch (err) {
-    console.error('Error fetching translations:', err)
-    throw err
+    console.error("Error fetching translations:", err);
+    throw err;
   }
 }
 
 // tracks 전체
 export async function getAllTracks(): Promise<Track[]> {
   try {
-    const snapshot: DataSnapshot = await get(ref(database, 'tracks'))
+    const snapshot: DataSnapshot = await get(ref(database, "tracks"));
 
     if (!snapshot.exists()) {
-      console.warn('No tracks data available')
-      return []
+      console.warn("No tracks data available");
+      return [];
     }
 
-    const tracksObj = snapshot.val() as Record<string, unknown>
+    const tracksObj = snapshot.val() as Record<string, unknown>;
 
     const result: Track[] = Object.entries(tracksObj).map(([id, raw]) => {
-      const value = raw as Record<string, unknown>
+      const value = raw as Record<string, unknown>;
 
       return {
         id,
-        title: String(value.title ?? ''),
+        title: String(value.title ?? ""),
         level: value.level ? String(value.level) : undefined,
-        category: value.category as Track['category'],
-        status: value.status as Track['status'],
+        category: value.category as Track["category"],
+        status: value.status as Track["status"],
         short: value.short ? String(value.short) : undefined,
         short_ko: value.short_ko ? String(value.short_ko) : undefined,
         url: value.url ? String(value.url) : undefined,
-        tags: Array.isArray(value.tags)
-          ? (value.tags as string[])
-          : undefined,
-      }
-    })
+        tags: Array.isArray(value.tags) ? (value.tags as string[]) : undefined,
+      };
+    });
 
-    return result
+    return result;
   } catch (err) {
-    console.error('Error fetching tracks:', err)
-    throw err
+    console.error("Error fetching tracks:", err);
+    throw err;
   }
 }
 
 /**
  * Create a new track in Firebase Realtime Database
  */
-export async function createTrack(track: Omit<Track, 'id'>): Promise<string> {
+export async function createTrack(track: Omit<Track, "id">): Promise<string> {
   try {
-    const { push, set } = await import('firebase/database')
-    const tracksRef = ref(database, 'tracks')
-    const newTrackRef = push(tracksRef)
+    const { push, set } = await import("firebase/database");
+    const tracksRef = ref(database, "tracks");
+    const newTrackRef = push(tracksRef);
 
     if (!newTrackRef.key) {
-      throw new Error('Failed to generate track ID')
+      throw new Error("Failed to generate track ID");
     }
 
-    await set(newTrackRef, track)
-    return newTrackRef.key
+    await set(newTrackRef, track);
+    return newTrackRef.key;
   } catch (err) {
-    console.error('Error creating track:', err)
-    throw err
+    console.error("Error creating track:", err);
+    throw err;
   }
 }
 
 /**
  * Update an existing track in Firebase Realtime Database
  */
-export async function updateTrack(id: string, updates: Partial<Track>): Promise<void> {
+export async function updateTrack(
+  id: string,
+  updates: Partial<Track>
+): Promise<void> {
   try {
-    const { update } = await import('firebase/database')
-    const trackRef = ref(database, `tracks/${id}`)
+    const { update } = await import("firebase/database");
+    const trackRef = ref(database, `tracks/${id}`);
 
     // Remove id from updates if present
-    const { id: _, ...updateData } = updates as Track
+    const updateData = { ...updates };
+    delete updateData.id;
 
-    await update(trackRef, updateData)
+    await update(trackRef, updateData);
   } catch (err) {
-    console.error('Error updating track:', err)
-    throw err
+    console.error("Error updating track:", err);
+    throw err;
   }
 }
 
@@ -165,12 +165,12 @@ export async function updateTrack(id: string, updates: Partial<Track>): Promise<
  */
 export async function deleteTrack(id: string): Promise<void> {
   try {
-    const { remove } = await import('firebase/database')
-    const trackRef = ref(database, `tracks/${id}`)
-    await remove(trackRef)
+    const { remove } = await import("firebase/database");
+    const trackRef = ref(database, `tracks/${id}`);
+    await remove(trackRef);
   } catch (err) {
-    console.error('Error deleting track:', err)
-    throw err
+    console.error("Error deleting track:", err);
+    throw err;
   }
 }
 
@@ -181,12 +181,12 @@ export async function deleteTrack(id: string): Promise<void> {
  */
 export async function getUserIpAddress(): Promise<string | undefined> {
   try {
-    const response = await fetch('https://api.ipify.org?format=json')
-    const data = await response.json()
-    return data.ip
+    const response = await fetch("https://api.ipify.org?format=json");
+    const data = await response.json();
+    return data.ip;
   } catch (err) {
-    console.error('Error fetching IP address:', err)
-    return undefined
+    console.error("Error fetching IP address:", err);
+    return undefined;
   }
 }
 
@@ -200,27 +200,27 @@ export async function createUserProfile(
   password?: string
 ): Promise<void> {
   try {
-    const ipAddress = await getUserIpAddress()
-    const now = new Date().toISOString()
+    const ipAddress = await getUserIpAddress();
+    const now = new Date().toISOString();
 
     const userProfile: UserProfile = {
       uid,
       email,
-      name: name || '',
-      password: password || '',
-      bio: '',
-      photoURL: '',
-      role: 'user',
+      name: name || "",
+      password: password || "",
+      bio: "",
+      photoURL: "",
+      role: "user",
       email_verified: false,
       ip_address: ipAddress,
       created_at: now,
       updated_at: now,
-    }
+    };
 
-    await setDoc(doc(firestore, 'user_profile', uid), userProfile)
+    await setDoc(doc(firestore, "user_profile", uid), userProfile);
   } catch (err) {
-    console.error('Error creating user profile:', err)
-    throw err
+    console.error("Error creating user profile:", err);
+    throw err;
   }
 }
 
@@ -229,18 +229,18 @@ export async function createUserProfile(
  */
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   try {
-    const docRef = doc(firestore, 'user_profile', uid)
-    const docSnap = await getDoc(docRef)
+    const docRef = doc(firestore, "user_profile", uid);
+    const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return docSnap.data() as UserProfile
+      return docSnap.data() as UserProfile;
     } else {
-      console.warn('No user profile found for uid:', uid)
-      return null
+      console.warn("No user profile found for uid:", uid);
+      return null;
     }
   } catch (err) {
-    console.error('Error fetching user profile:', err)
-    throw err
+    console.error("Error fetching user profile:", err);
+    throw err;
   }
 }
 
@@ -249,18 +249,18 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
  */
 export async function getAllUserProfiles(): Promise<UserProfile[]> {
   try {
-    const { collection, getDocs } = await import('firebase/firestore')
-    const querySnapshot = await getDocs(collection(firestore, 'user_profile'))
+    const { collection, getDocs } = await import("firebase/firestore");
+    const querySnapshot = await getDocs(collection(firestore, "user_profile"));
 
-    const users: UserProfile[] = []
-    querySnapshot.forEach((doc) => {
-      users.push(doc.data() as UserProfile)
-    })
+    const users: UserProfile[] = [];
+    querySnapshot.forEach(doc => {
+      users.push(doc.data() as UserProfile);
+    });
 
-    return users
+    return users;
   } catch (err) {
-    console.error('Error fetching all user profiles:', err)
-    throw err
+    console.error("Error fetching all user profiles:", err);
+    throw err;
   }
 }
 
@@ -272,14 +272,14 @@ export async function updateUserProfile(
   updates: Partial<UserProfile>
 ): Promise<void> {
   try {
-    const docRef = doc(firestore, 'user_profile', uid)
+    const docRef = doc(firestore, "user_profile", uid);
     await updateDoc(docRef, {
       ...updates,
       updated_at: new Date().toISOString(),
-    })
+    });
   } catch (err) {
-    console.error('Error updating user profile:', err)
-    throw err
+    console.error("Error updating user profile:", err);
+    throw err;
   }
 }
 
@@ -296,18 +296,18 @@ export async function signupWithEmail(
       auth,
       email,
       password
-    )
+    );
 
     // Firestore에 사용자 프로필 생성
-    await createUserProfile(userCredential.user.uid, email, name,password)
+    await createUserProfile(userCredential.user.uid, email, name, password);
 
     // 이메일 인증 발송
-    await sendEmailVerification(userCredential.user)
+    await sendEmailVerification(userCredential.user);
 
-    return userCredential
+    return userCredential;
   } catch (err) {
-    console.error('Error signing up:', err)
-    throw err
+    console.error("Error signing up:", err);
+    throw err;
   }
 }
 
@@ -323,22 +323,22 @@ export async function loginWithEmail(
       auth,
       email,
       password
-    )
+    );
 
     // 이메일 인증 상태 확인 및 Firestore 업데이트
     if (userCredential.user.emailVerified) {
-      const profile = await getUserProfile(userCredential.user.uid)
+      const profile = await getUserProfile(userCredential.user.uid);
       if (profile && !profile.email_verified) {
         await updateUserProfile(userCredential.user.uid, {
           email_verified: true,
-        })
+        });
       }
     }
 
-    return userCredential
+    return userCredential;
   } catch (err) {
-    console.error('Error logging in:', err)
-    throw err
+    console.error("Error logging in:", err);
+    throw err;
   }
 }
 
@@ -347,10 +347,10 @@ export async function loginWithEmail(
  */
 export async function logout(): Promise<void> {
   try {
-    await signOut(auth)
+    await signOut(auth);
   } catch (err) {
-    console.error('Error logging out:', err)
-    throw err
+    console.error("Error logging out:", err);
+    throw err;
   }
 }
 
@@ -359,10 +359,10 @@ export async function logout(): Promise<void> {
  */
 export async function resetPassword(email: string): Promise<void> {
   try {
-    await sendPasswordResetEmail(auth, email)
+    await sendPasswordResetEmail(auth, email);
   } catch (err) {
-    console.error('Error sending password reset email:', err)
-    throw err
+    console.error("Error sending password reset email:", err);
+    throw err;
   }
 }
 
@@ -376,13 +376,13 @@ export async function uploadProfileImage(
   file: File
 ): Promise<string> {
   try {
-    const imageRef = storageRef(storage, `profiles/${uid}/profile.jpg`)
-    await uploadBytes(imageRef, file)
-    const downloadURL = await getDownloadURL(imageRef)
-    return downloadURL
+    const imageRef = storageRef(storage, `profiles/${uid}/profile.jpg`);
+    await uploadBytes(imageRef, file);
+    const downloadURL = await getDownloadURL(imageRef);
+    return downloadURL;
   } catch (err) {
-    console.error('Error uploading profile image:', err)
-    throw err
+    console.error("Error uploading profile image:", err);
+    throw err;
   }
 }
 
@@ -392,12 +392,12 @@ export async function uploadProfileImage(
 export async function deleteProfileImage(photoURL: string): Promise<void> {
   try {
     // photoURL에서 Storage 경로 추출
-    const url = new URL(photoURL)
-    const path = decodeURIComponent(url.pathname.split('/o/')[1].split('?')[0])
-    const imageRef = storageRef(storage, path)
-    await deleteObject(imageRef)
+    const url = new URL(photoURL);
+    const path = decodeURIComponent(url.pathname.split("/o/")[1].split("?")[0]);
+    const imageRef = storageRef(storage, path);
+    await deleteObject(imageRef);
   } catch (err) {
-    console.error('Error deleting profile image:', err)
+    console.error("Error deleting profile image:", err);
     // 이미지 삭제 실패는 치명적이지 않으므로 에러를 던지지 않음
   }
 }
@@ -405,18 +405,23 @@ export async function deleteProfileImage(photoURL: string): Promise<void> {
 /**
  * 사용자 재인증 (비밀번호 변경 등 민감한 작업 전에 필요)
  */
-export async function reauthenticateUser(currentPassword: string): Promise<void> {
+export async function reauthenticateUser(
+  currentPassword: string
+): Promise<void> {
   try {
-    const user = auth.currentUser
+    const user = auth.currentUser;
     if (!user || !user.email) {
-      throw new Error('No user is currently signed in')
+      throw new Error("No user is currently signed in");
     }
 
-    const credential = EmailAuthProvider.credential(user.email, currentPassword)
-    await reauthenticateWithCredential(user, credential)
+    const credential = EmailAuthProvider.credential(
+      user.email,
+      currentPassword
+    );
+    await reauthenticateWithCredential(user, credential);
   } catch (err) {
-    console.error('Error reauthenticating user:', err)
-    throw err
+    console.error("Error reauthenticating user:", err);
+    throw err;
   }
 }
 
@@ -428,21 +433,21 @@ export async function updateUserPassword(
   newPassword: string
 ): Promise<void> {
   try {
-    const user = auth.currentUser
+    const user = auth.currentUser;
     if (!user) {
-      throw new Error('No user is currently signed in')
+      throw new Error("No user is currently signed in");
     }
 
     // 먼저 재인증
-    await reauthenticateUser(currentPassword)
+    await reauthenticateUser(currentPassword);
 
     // 비밀번호 변경
-    const { updatePassword } = await import('firebase/auth')
-    await updatePassword(user, newPassword)
-    await updateUserProfile(user.uid, { password: newPassword })
+    const { updatePassword } = await import("firebase/auth");
+    await updatePassword(user, newPassword);
+    await updateUserProfile(user.uid, { password: newPassword });
   } catch (err) {
-    console.error('Error updating password:', err)
-    throw err
+    console.error("Error updating password:", err);
+    throw err;
   }
 }
 
@@ -454,26 +459,26 @@ export async function deleteUserAccount(
   photoURL?: string
 ): Promise<void> {
   try {
-    const user = auth.currentUser
+    const user = auth.currentUser;
     if (!user) {
-      throw new Error('No user is currently signed in')
+      throw new Error("No user is currently signed in");
     }
 
     // 1. Storage 이미지 삭제 (있는 경우)
     if (photoURL) {
-      await deleteProfileImage(photoURL)
+      await deleteProfileImage(photoURL);
     }
 
     // 2. Firestore 문서 삭제
-    const docRef = doc(firestore, 'user_profile', uid)
-    await deleteDoc(docRef)
+    const docRef = doc(firestore, "user_profile", uid);
+    await deleteDoc(docRef);
 
     // 3. Auth 계정 삭제
-    const { deleteUser } = await import('firebase/auth')
-    await deleteUser(user)
+    const { deleteUser } = await import("firebase/auth");
+    await deleteUser(user);
   } catch (err) {
-    console.error('Error deleting user account:', err)
-    throw err
+    console.error("Error deleting user account:", err);
+    throw err;
   }
 }
 
@@ -488,17 +493,17 @@ export async function deleteUserAccountByAdmin(
   try {
     // 1. Storage 이미지 삭제 (있는 경우)
     if (photoURL) {
-      await deleteProfileImage(photoURL)
+      await deleteProfileImage(photoURL);
     }
 
     // 2. Firestore 문서 삭제
-    const docRef = doc(firestore, 'user_profile', uid)
-    await deleteDoc(docRef)
+    const docRef = doc(firestore, "user_profile", uid);
+    await deleteDoc(docRef);
 
     // Note: Auth 계정은 삭제하지 않음 (현재 로그인한 사용자만 자신의 Auth 계정 삭제 가능)
   } catch (err) {
-    console.error('Error deleting user account by admin:', err)
-    throw err
+    console.error("Error deleting user account by admin:", err);
+    throw err;
   }
 }
 
@@ -515,14 +520,14 @@ export async function deleteUserByAdminFunction(
     const deleteUserCallable = httpsCallable<
       { uid: string; photoURL?: string },
       { success: boolean; message: string }
-    >(functions, 'deleteUserByAdmin')
+    >(functions, "deleteUserByAdmin");
 
-    const result = await deleteUserCallable({ uid, photoURL })
-    console.log('User deleted via Cloud Function:', result.data)
+    const result = await deleteUserCallable({ uid, photoURL });
+    console.log("User deleted via Cloud Function:", result.data);
   } catch (error) {
-    console.error('Error calling deleteUserByAdmin function:', error)
-    throw error
+    console.error("Error calling deleteUserByAdmin function:", error);
+    throw error;
   }
 }
 
-export { database, auth, firestore, storage }
+export { auth, database, firestore, storage };

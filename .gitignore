@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 .env*
 
+# Firebase cache
+.firebase/
