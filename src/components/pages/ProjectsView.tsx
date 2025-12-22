@@ -54,7 +54,7 @@ export const ProjectsView: FC = () => {
             WebkitTextFillColor: "transparent",
           }}
         >
-          Success Stories & Projects
+          Experienced Projects
         </h1>
         <p
           style={{
