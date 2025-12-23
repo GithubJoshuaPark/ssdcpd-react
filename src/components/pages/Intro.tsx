@@ -33,7 +33,7 @@ import { AuthModal } from "../auth/AuthModal";
 import { LottieView } from "../common/LottieView";
 import { ContactModal } from "../contact/ContactModal";
 
-const LOTTIE_FILES = ["developer0.json", "contact0.json"];
+const LOTTIE_FILES = ["developer0.json","developer2.json","contact0.json","lottieDeveloper.json"];
 
 export const Intro: FC = () => {
   const { currentUser } = useAuth();
