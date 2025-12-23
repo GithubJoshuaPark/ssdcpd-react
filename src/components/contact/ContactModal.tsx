@@ -28,7 +28,7 @@ export const ContactModal: FC<ContactModalProps> = ({ isOpen, onClose }) => {
     message: "",
   });
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState<"all" | "responsed">("all");
+  const [filter, setFilter] = useState<"all" | "responsed" | "pending">("all");
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -157,6 +157,10 @@ export const ContactModal: FC<ContactModalProps> = ({ isOpen, onClose }) => {
       return matchesSearch && !!c.response;
     }
 
+    if (filter === "pending") {
+      return matchesSearch && !c.response;
+    }
+
     return matchesSearch;
   });
 
@@ -282,6 +286,13 @@ export const ContactModal: FC<ContactModalProps> = ({ isOpen, onClose }) => {
                 style={{ fontSize: "0.75rem", padding: "4px 12px" }}
               >
                 Responsed
+              </button>
+              <button
+                className={`chip ${filter === "pending" ? "chip-active" : ""}`}
+                onClick={() => setFilter("pending")}
+                style={{ fontSize: "0.75rem", padding: "4px 12px" }}
+              >
+                Not yet
               </button>
             </div>
 

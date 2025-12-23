@@ -18,6 +18,7 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState<"all" | "responsed" | "pending">("all");
   const [responseTexts, setResponseTexts] = useState<Record<string, string>>(
     {}
   );
@@ -98,13 +99,23 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const filteredContacts = contacts.filter(
-    c =>
+  const filteredContacts = contacts.filter(c => {
+    const matchesSearch =
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.message.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      c.message.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (filter === "responsed") {
+      return matchesSearch && !!c.response;
+    }
+
+    if (filter === "pending") {
+      return matchesSearch && !c.response;
+    }
+
+    return matchesSearch;
+  });
 
   if (!isOpen) return null;
 
@@ -120,7 +131,7 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
 
         <h2 className="auth-modal-title">Admin: All Contacts</h2>
 
-        <div className="auth-form-group" style={{ marginBottom: "20px" }}>
+        <div className="auth-form-group" style={{ marginBottom: "16px" }}>
           <input
             type="text"
             placeholder="Search by name, email, subject, or message..."
@@ -128,6 +139,30 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
             onChange={e => setSearchTerm(e.target.value)}
             className="auth-input"
           />
+        </div>
+
+        <div
+          className="filter-group"
+          style={{ marginBottom: "20px", display: "flex", gap: "10px" }}
+        >
+          <button
+            className={`chip ${filter === "all" ? "chip-active" : ""}`}
+            onClick={() => setFilter("all")}
+          >
+            All Contacts
+          </button>
+          <button
+            className={`chip ${filter === "responsed" ? "chip-active" : ""}`}
+            onClick={() => setFilter("responsed")}
+          >
+            Responsed Only
+          </button>
+          <button
+            className={`chip ${filter === "pending" ? "chip-active" : ""}`}
+            onClick={() => setFilter("pending")}
+          >
+            Not yet
+          </button>
         </div>
 
         <div className="contact-modal-content" style={{ overflowY: "auto" }}>
