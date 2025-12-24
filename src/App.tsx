@@ -5,8 +5,11 @@ import { Footer } from "./components/layout/Footer";
 import { Header } from "./components/layout/Header";
 import { Cpd } from "./components/pages/Cpd";
 import { Intro } from "./components/pages/Intro";
+import { PrivacyPolicy } from "./components/pages/PrivacyPolicy";
 import { ProjectsView } from "./components/pages/ProjectsView";
+import { TermsOfService } from "./components/pages/TermsOfService";
 import { WbsView } from "./components/pages/WbsView";
+
 import { I18nProvider } from "./i18n/I18nProvider";
 
 import "./styles.css";
@@ -27,6 +30,8 @@ function App() {
                 <Route path="/cpd" element={<Cpd />} />
                 <Route path="/projects" element={<ProjectsView />} />
                 <Route path="/wbs/:projectId" element={<WbsView />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
               </Routes>
             </main>
             <Footer />

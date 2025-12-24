@@ -33,7 +33,12 @@ import { AuthModal } from "../auth/AuthModal";
 import { LottieView } from "../common/LottieView";
 import { ContactModal } from "../contact/ContactModal";
 
-const LOTTIE_FILES = ["developer0.json","developer2.json","contact0.json","lottieDeveloper.json"];
+const LOTTIE_FILES = [
+  "developer0.json",
+  "developer2.json",
+  "contact0.json",
+  "lottieDeveloper.json",
+];
 
 export const Intro: FC = () => {
   const { currentUser } = useAuth();
@@ -66,7 +71,7 @@ export const Intro: FC = () => {
           <p>Welcome! I'm an IT professional with</p>
           <p className="highlight-text">20+ years of expertise in:</p>
           <p className="expertise-tags">
-            <span className="expertise-tag">business analysis</span>
+            <span className="expertise-tag">Business analysis</span>
             <span className="expertise-tag">, software development</span>
             <span className="expertise-tag">&nbsp;and project management</span>
           </p>

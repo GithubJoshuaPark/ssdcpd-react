@@ -4,10 +4,12 @@ import {
   createUserWithEmailAndPassword,
   EmailAuthProvider,
   getAuth,
+  GoogleAuthProvider,
   reauthenticateWithCredential,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   type Auth,
   type UserCredential,
@@ -341,6 +343,36 @@ export async function loginWithEmail(
     return userCredential;
   } catch (err) {
     console.error("Error logging in:", err);
+    throw err;
+  }
+}
+
+/**
+ * Google 로그인
+ */
+export async function loginWithGoogle(): Promise<UserCredential> {
+  const provider = new GoogleAuthProvider();
+  try {
+    const userCredential = await signInWithPopup(auth, provider);
+    const user = userCredential.user;
+
+    // Firestore에 사용자 프로필이 있는지 확인
+    const profile = await getUserProfile(user.uid);
+    if (!profile) {
+      // 프로필이 없으면 새로 생성 (Google 로그인은 기본적으로 이메일 인증됨)
+      await createUserProfile(
+        user.uid,
+        user.email || "",
+        user.displayName || "",
+        ""
+      );
+      // Google 사용자는 기본적으로 email_verified: true
+      await updateUserProfile(user.uid, { email_verified: true });
+    }
+
+    return userCredential;
+  } catch (err) {
+    console.error("Error logging in with Google:", err);
     throw err;
   }
 }
