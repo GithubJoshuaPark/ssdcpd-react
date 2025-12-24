@@ -1,4 +1,5 @@
 // src/auth/AuthProvider.tsx
+import type { MultiFactorResolver } from "firebase/auth";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -6,9 +7,16 @@ import {
   auth,
   deleteProfileImage,
   deleteUserAccount,
+  finalizeMfaEnrollment as firebaseFinalizeMfaEnrollment,
+  getMfaResolver as firebaseGetMfaResolver,
   loginWithGoogle as firebaseLoginWithGoogle,
   logout as firebaseLogout,
   resetPassword as firebaseResetPassword,
+  resolveMfaSignIn as firebaseResolveMfaSignIn,
+  sendMfaEnrollmentCode as firebaseSendMfaEnrollmentCode,
+  sendMfaSignInCode as firebaseSendMfaSignInCode,
+  unenrollMfa as firebaseUnenrollMfa,
+  getRecaptchaVerifier,
   getUserProfile,
   loginWithEmail,
   signupWithEmail,
@@ -127,6 +135,57 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     await deleteUserAccount(currentUser.uid, userProfile?.photoURL);
   };
 
+  const sendMfaEnrollmentCode = async (
+    phoneNumber: string,
+    containerId: string
+  ) => {
+    const recaptchaVerifier = getRecaptchaVerifier(containerId);
+    return await firebaseSendMfaEnrollmentCode(phoneNumber, recaptchaVerifier);
+  };
+
+  const finalizeMfaEnrollment = async (
+    verificationId: string,
+    verificationCode: string
+  ) => {
+    await firebaseFinalizeMfaEnrollment(verificationId, verificationCode);
+    if (currentUser) {
+      const profile = await getUserProfile(currentUser.uid);
+      setUserProfile(profile);
+    }
+  };
+
+  const disableMfa = async (factorId: string) => {
+    await firebaseUnenrollMfa(factorId);
+    if (currentUser) {
+      const profile = await getUserProfile(currentUser.uid);
+      setUserProfile(profile);
+    }
+  };
+
+  const sendMfaSignInCode = async (
+    resolver: MultiFactorResolver,
+    containerId: string
+  ) => {
+    const recaptchaVerifier = getRecaptchaVerifier(containerId);
+    return await firebaseSendMfaSignInCode(resolver, recaptchaVerifier);
+  };
+
+  const resolveMfaSignIn = async (
+    resolver: MultiFactorResolver,
+    verificationId: string,
+    verificationCode: string
+  ) => {
+    return await firebaseResolveMfaSignIn(
+      resolver,
+      verificationId,
+      verificationCode
+    );
+  };
+
+  const getMfaResolver = (error: unknown) => {
+    return firebaseGetMfaResolver(error);
+  };
+
   const value = {
     currentUser,
     userProfile,
@@ -140,6 +199,12 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     uploadProfilePhoto,
     changePassword,
     deleteAccount,
+    sendMfaEnrollmentCode,
+    finalizeMfaEnrollment,
+    disableMfa,
+    sendMfaSignInCode,
+    resolveMfaSignIn,
+    getMfaResolver,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

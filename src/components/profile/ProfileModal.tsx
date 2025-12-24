@@ -8,6 +8,7 @@ import { CustomPrompt } from "../common/CustomPrompt";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 import { Toast, type ToastType } from "../common/Toast";
 
+import { multiFactor, type PhoneMultiFactorInfo } from "firebase/auth";
 import type { UserProfile } from "../../types_interfaces/userProfile";
 
 interface ProfileModalProps {
@@ -29,6 +30,10 @@ export const ProfileModal: FC<ProfileModalProps> = ({
     uploadProfilePhoto,
     changePassword,
     deleteAccount,
+    sendMfaEnrollmentCode,
+    finalizeMfaEnrollment,
+    disableMfa,
+    currentUser,
   } = useAuth();
   const { t } = useI18n();
 
@@ -45,8 +50,24 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   const [showCurrentPasswordPrompt, setShowCurrentPasswordPrompt] =
     useState(false);
   const [showNewPasswordPrompt, setShowNewPasswordPrompt] = useState(false);
+  const [showMfaDisableConfirm, setShowMfaDisableConfirm] = useState(false);
   const [currentPasswordTemp, setCurrentPasswordTemp] = useState("");
   const [processing, setProcessing] = useState(false);
+
+  // --- MFA States ---
+  const [mfaPhoneNumber, setMfaPhoneNumber] = useState("");
+  const [mfaVerificationCode, setMfaVerificationCode] = useState("");
+  const [mfaVerificationId, setMfaVerificationId] = useState("");
+  const [mfaStep, setMfaStep] = useState<"idle" | "verifying">("idle");
+  const [mfaSendingCode, setMfaSendingCode] = useState(false);
+
+  const enrolledFactors = currentUser
+    ? multiFactor(currentUser).enrolledFactors
+    : [];
+  const isMfaEnabled = enrolledFactors.length > 0;
+  const enrolledPhone = isMfaEnabled
+    ? (enrolledFactors[0] as PhoneMultiFactorInfo).phoneNumber
+    : "";
 
   // 읽기 전용 모드 여부 (targetProfile이 있으면 True)
   const isReadOnly = !!targetProfile;
@@ -74,6 +95,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
         e.key === "Escape" &&
         isOpen &&
         !showDeleteConfirm &&
+        !showMfaDisableConfirm &&
         !showCurrentPasswordPrompt &&
         !showNewPasswordPrompt
       ) {
@@ -86,6 +108,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   }, [
     isOpen,
     showDeleteConfirm,
+    showMfaDisableConfirm,
     showCurrentPasswordPrompt,
     showNewPasswordPrompt,
     onClose,
@@ -259,6 +282,80 @@ export const ProfileModal: FC<ProfileModalProps> = ({
     }
   };
 
+  // --- MFA Handlers ---
+  const handleSendMfaCode = async () => {
+    if (!mfaPhoneNumber) {
+      setToast({ message: "Please enter a phone number", type: "error" });
+      return;
+    }
+
+    setMfaSendingCode(true);
+    try {
+      const vId = await sendMfaEnrollmentCode(
+        mfaPhoneNumber,
+        "recaptcha-container"
+      );
+      setMfaVerificationId(vId);
+      setMfaStep("verifying");
+      setToast({ message: "Verification code sent!", type: "success" });
+    } catch (error) {
+      console.error("MFA Send error:", error);
+      setToast({
+        message: "Failed to send code. Check number format.",
+        type: "error",
+      });
+    } finally {
+      setMfaSendingCode(false);
+    }
+  };
+
+  const handleEnrollMfa = async () => {
+    if (!mfaVerificationCode) {
+      setToast({ message: "Please enter verification code", type: "error" });
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      await finalizeMfaEnrollment(mfaVerificationId, mfaVerificationCode);
+      setToast({ message: "2FA Enabled successfully!", type: "success" });
+      setMfaStep("idle");
+      setMfaPhoneNumber("");
+      setMfaVerificationCode("");
+    } catch (error) {
+      console.error("MFA Enrollment error:", error);
+      setToast({ message: "Invalid verification code", type: "error" });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDisableMfa = () => {
+    if (!enrolledFactors[0]) return;
+    setShowMfaDisableConfirm(true);
+  };
+
+  const handleConfirmDisableMfa = async () => {
+    setShowMfaDisableConfirm(false);
+    if (!enrolledFactors[0]) return;
+
+    setProcessing(true);
+    try {
+      const factorId = enrolledFactors[0].uid;
+      await disableMfa(factorId);
+      setToast({ message: "2FA Disabled successfully", type: "success" });
+      setMfaStep("idle");
+    } catch (error) {
+      console.error("MFA Disable error:", error);
+      setToast({
+        message: "Failed to disable 2FA. Re-authentication might be needed.",
+        type: "error",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   return (
     <>
       <div className="auth-modal-overlay" onClick={onClose}>
@@ -357,6 +454,163 @@ export const ProfileModal: FC<ProfileModalProps> = ({
               />
             </div>
 
+            {/* 2FA Section (Only for self-profile) */}
+            {!isReadOnly && (
+              <div
+                className="profile-mfa-section"
+                style={{
+                  marginTop: "10px",
+                  padding: "15px",
+                  background: "rgba(56, 189, 248, 0.05)",
+                  border: "1px solid rgba(56, 189, 248, 0.2)",
+                  borderRadius: "12px",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "0.95rem",
+                    marginBottom: "10px",
+                    color: "var(--accent)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  🔒 {t("profile.2faStatus") || "2-Step Verification"}
+                </h3>
+
+                {isMfaEnabled ? (
+                  <div
+                    style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}
+                  >
+                    <div style={{ marginBottom: "10px" }}>
+                      ✅ {t("profile.2faEnabled") || "Enabled with"}{" "}
+                      <strong>{enrolledPhone}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      className="profile-secondary-button"
+                      onClick={handleDisableMfa}
+                      style={{
+                        padding: "8px",
+                        fontSize: "0.8rem",
+                        width: "100%",
+                      }}
+                    >
+                      {t("profile.changeNumber") || "Change Number"}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p
+                      style={{
+                        fontSize: "0.82rem",
+                        color: "var(--text-muted)",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      {t("profile.2faDescription") ||
+                        "Protect your account with SMS verification."}
+                    </p>
+
+                    {mfaStep === "idle" ? (
+                      <div
+                        className="auth-form-group"
+                        style={{ marginBottom: 0 }}
+                      >
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <input
+                            type="tel"
+                            placeholder="+821012345678"
+                            className="auth-input"
+                            value={mfaPhoneNumber}
+                            onChange={e => setMfaPhoneNumber(e.target.value)}
+                            disabled={mfaSendingCode}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            type="button"
+                            className="auth-button"
+                            onClick={handleSendMfaCode}
+                            disabled={mfaSendingCode}
+                            style={{
+                              padding: "0 20px",
+                              width: "auto",
+                              margin: 0,
+                              fontSize: "0.85rem",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {mfaSendingCode
+                              ? "..."
+                              : t("profile.sendCode") || "Send Code"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className="auth-form-group"
+                        style={{ marginBottom: 0 }}
+                      >
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <input
+                            type="text"
+                            placeholder="6-digit code"
+                            className="auth-input"
+                            value={mfaVerificationCode}
+                            onChange={e =>
+                              setMfaVerificationCode(e.target.value)
+                            }
+                            maxLength={6}
+                            style={{
+                              flex: 1,
+                              textAlign: "center",
+                              letterSpacing: "2px",
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="auth-button"
+                            onClick={handleEnrollMfa}
+                            style={{
+                              padding: "0 20px",
+                              width: "auto",
+                              margin: 0,
+                              fontSize: "0.85rem",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {t("profile.verify") || "Verify"}
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          className="profile-secondary-button"
+                          onClick={() => setMfaStep("idle")}
+                          style={{
+                            marginTop: "12px",
+                            padding: "8px",
+                            fontSize: "0.8rem",
+                            width: "100%",
+                          }}
+                        >
+                          {t("profile.changeNumber") || "Change Number"}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div
+                  id="recaptcha-container"
+                  style={{
+                    marginTop: "15px",
+                    display: isMfaEnabled ? "none" : "flex",
+                    justifyContent: "center",
+                  }}
+                ></div>
+              </div>
+            )}
+
             {/* 버튼 그룹 */}
             {!isReadOnly && (
               <>
@@ -414,6 +668,16 @@ export const ProfileModal: FC<ProfileModalProps> = ({
           handleDeleteAccount();
         }}
         onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      {/* MFA 해제 확인 다이얼로그 */}
+      <ConfirmDialog
+        isOpen={showMfaDisableConfirm}
+        title={t("profile.2faStatus") || "2-MFA Verification"}
+        message="Are you sure you want to reset 2-MFA verification?"
+        confirmText={t("profile.confirm") || "Confirm"}
+        onConfirm={handleConfirmDisableMfa}
+        onCancel={() => setShowMfaDisableConfirm(false)}
       />
 
       {/* Toast 알림 */}

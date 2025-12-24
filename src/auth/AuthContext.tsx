@@ -1,5 +1,5 @@
 // src/auth/AuthContext.tsx
-import type { User } from "firebase/auth";
+import type { MultiFactorResolver, User, UserCredential } from "firebase/auth";
 import { createContext } from "react";
 import type { UserProfile } from "../types_interfaces/userProfile";
 
@@ -19,6 +19,25 @@ export interface AuthContextType {
     newPassword: string
   ) => Promise<void>;
   deleteAccount: () => Promise<void>;
+  sendMfaEnrollmentCode: (
+    phoneNumber: string,
+    containerId: string
+  ) => Promise<string>;
+  finalizeMfaEnrollment: (
+    verificationId: string,
+    verificationCode: string
+  ) => Promise<void>;
+  sendMfaSignInCode: (
+    resolver: MultiFactorResolver,
+    containerId: string
+  ) => Promise<string>;
+  resolveMfaSignIn: (
+    resolver: MultiFactorResolver,
+    verificationId: string,
+    verificationCode: string
+  ) => Promise<UserCredential>;
+  getMfaResolver: (error: unknown) => MultiFactorResolver | null;
+  disableMfa: (factorId: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(

@@ -4,14 +4,22 @@ import {
   createUserWithEmailAndPassword,
   EmailAuthProvider,
   getAuth,
+  getMultiFactorResolver,
   GoogleAuthProvider,
+  multiFactor,
+  PhoneAuthProvider,
+  PhoneMultiFactorGenerator,
   reauthenticateWithCredential,
+  RecaptchaVerifier,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
   type Auth,
+  type MultiFactorError,
+  type MultiFactorResolver,
+  type PhoneMultiFactorInfo,
   type UserCredential,
 } from "firebase/auth";
 import {
@@ -914,6 +922,118 @@ export async function deleteWbsItem(
     console.error("Error deleting WBS item:", err);
     throw err;
   }
+}
+
+// ----- MFA (Multi-Factor Authentication) functions -----
+
+/**
+ * RecaptchaVerifier 인스턴스 생성 (웹용)
+ */
+export function getRecaptchaVerifier(containerId: string) {
+  return new RecaptchaVerifier(auth, containerId, {
+    size: "normal",
+  });
+}
+
+/**
+ * MFA 등록을 위한 인증번호 발송
+ */
+export async function sendMfaEnrollmentCode(
+  phoneNumber: string,
+  recaptchaVerifier: RecaptchaVerifier
+): Promise<string> {
+  const user = auth.currentUser;
+  if (!user) throw new Error("No user logged in");
+
+  const session = await multiFactor(user).getSession();
+  const phoneAuthProvider = new PhoneAuthProvider(auth);
+  return phoneAuthProvider.verifyPhoneNumber(
+    { phoneNumber, session },
+    recaptchaVerifier
+  );
+}
+
+/**
+ * MFA 등록 완료
+ */
+export async function finalizeMfaEnrollment(
+  verificationId: string,
+  verificationCode: string,
+  displayName: string = "Phone Number"
+): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) throw new Error("No user logged in");
+
+  const credential = PhoneAuthProvider.credential(
+    verificationId,
+    verificationCode
+  );
+  const assertion = PhoneMultiFactorGenerator.assertion(credential);
+
+  await multiFactor(user).enroll(assertion, displayName);
+}
+
+/**
+ * MFA 등록 해제
+ */
+export async function unenrollMfa(
+  factorIdOrInfo: string | PhoneMultiFactorInfo
+): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) throw new Error("No user logged in");
+
+  await multiFactor(user).unenroll(factorIdOrInfo);
+}
+
+/**
+ * 로그인 시 MFA 챌린지 해결을 위한 인증번호 발송
+ */
+export async function sendMfaSignInCode(
+  resolver: MultiFactorResolver,
+  recaptchaVerifier: RecaptchaVerifier,
+  multiFactorIndex: number = 0
+): Promise<string> {
+  const session = resolver.session;
+
+  const phoneAuthProvider = new PhoneAuthProvider(auth);
+  const selectedHint = resolver.hints[multiFactorIndex];
+
+  return phoneAuthProvider.verifyPhoneNumber(
+    { multiFactorHint: selectedHint, session },
+    recaptchaVerifier
+  );
+}
+
+/**
+ * MFA 챌린지 해결 (로그인 완료)
+ */
+export async function resolveMfaSignIn(
+  resolver: MultiFactorResolver,
+  verificationId: string,
+  verificationCode: string
+): Promise<UserCredential> {
+  const credential = PhoneAuthProvider.credential(
+    verificationId,
+    verificationCode
+  );
+  const assertion = PhoneMultiFactorGenerator.assertion(credential);
+
+  return resolver.resolveSignIn(assertion);
+}
+
+/**
+ * 에러 개체에서 MFA Resolver 추출
+ */
+export function getMfaResolver(error: unknown): MultiFactorResolver | null {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "auth/multi-factor-auth-required"
+  ) {
+    return getMultiFactorResolver(auth, error as MultiFactorError);
+  }
+  return null;
 }
 
 export { auth, database, firestore, storage };
