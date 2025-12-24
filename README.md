@@ -272,6 +272,7 @@ firebase login
 
 # 배포
 firebase deploy --only hosting:ssdcpd-react
+firebase deploy --only hosting:ssdcpd
 ```
 
 배포 후 [https://ssdcpd-react.web.app/](https://ssdcpd-react.web.app/)에서 확인 가능합니다.
