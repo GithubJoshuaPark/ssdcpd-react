@@ -1,12 +1,17 @@
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { FaExternalLinkAlt, FaGithub, FaSearch } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../auth/useAuth";
+
 import { getAllProjects } from "../../services/firebaseService";
 import type { Project } from "../../types_interfaces/project";
 
 export const ProjectsView: FC = () => {
+  const navigate = useNavigate();
+  const { userProfile } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -65,7 +70,8 @@ export const ProjectsView: FC = () => {
           }}
         >
           Explore some of the projects I've worked on over the years, ranging
-          from native mobile apps to complex web systems.
+          from companies' in-house systems, native mobile apps, complex web
+          systems, and more.
         </p>
       </div>
 
@@ -187,6 +193,42 @@ export const ProjectsView: FC = () => {
                       month: "short",
                     })}
                   </div>
+
+                  {userProfile?.email &&
+                    project.shareholders?.includes(userProfile.email) && (
+                      <div style={{ marginTop: "10px" }}>
+                        <button
+                          onClick={() => navigate(`/wbs/${project.id}`)}
+                          className="tag"
+                          style={{
+                            backgroundColor: "var(--accent)",
+                            color: "#fff",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "4px 12px",
+                            fontSize: "0.75rem",
+                            fontWeight: "700",
+                            borderRadius: "20px",
+                            transition: "all 0.2s ease",
+                            boxShadow: "0 4px 12px rgba(56, 189, 248, 0.3)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                          onMouseOver={e => {
+                            e.currentTarget.style.transform =
+                              "translateY(-2px)";
+                            e.currentTarget.style.filter = "brightness(1.1)";
+                          }}
+                          onMouseOut={e => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.filter = "brightness(1)";
+                          }}
+                        >
+                          WBS View
+                        </button>
+                      </div>
+                    )}
                 </div>
 
                 <p

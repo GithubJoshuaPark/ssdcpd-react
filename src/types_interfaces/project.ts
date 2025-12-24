@@ -9,6 +9,7 @@ export interface Project {
   description: string;
   userRole: string;
   usedSkills: string[];
+  shareholders?: string[];
   imageUrl?: string;
   createdAt: string;
   updatedAt: string;

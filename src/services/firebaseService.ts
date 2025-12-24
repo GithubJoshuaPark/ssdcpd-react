@@ -44,6 +44,7 @@ import type { Project } from "../types_interfaces/project";
 import type { Track } from "../types_interfaces/track";
 import type { TranslationsByLang } from "../types_interfaces/translations";
 import type { UserProfile } from "../types_interfaces/userProfile";
+import type { WbsItem } from "../types_interfaces/wbs";
 
 // ----- Firebase 초기화 -----
 
@@ -716,6 +717,25 @@ export async function getAllProjects(): Promise<Project[]> {
   }
 }
 
+export async function getProjectById(id: string): Promise<Project | null> {
+  try {
+    const projectRef = ref(database, `projects/${id}`);
+    const snapshot = await get(projectRef);
+
+    if (!snapshot.exists()) {
+      return null;
+    }
+
+    return {
+      id,
+      ...(snapshot.val() as object),
+    } as Project;
+  } catch (err) {
+    console.error("Error fetching project:", err);
+    throw err;
+  }
+}
+
 export async function updateProject(
   id: string,
   updates: Partial<Project>
@@ -732,7 +752,27 @@ export async function updateProject(
 
 export async function deleteProject(id: string): Promise<void> {
   try {
+    // 0. Fetch project details to get imageUrl
+    const project = await getProjectById(id);
     const { remove } = await import("firebase/database");
+
+    // 1. Delete WBS items node for this project
+    const wbsRef = ref(database, `wbs/${id}`);
+    await remove(wbsRef);
+
+    // 2. Delete project image from storage if exists
+    if (project?.imageUrl && project.imageUrl.startsWith("http")) {
+      try {
+        // Use the full URL to get the reference (Firebase Storage supports this)
+        const imageRef = storageRef(storage, project.imageUrl);
+        await deleteObject(imageRef);
+      } catch (storageErr) {
+        console.error("Error deleting project image from storage:", storageErr);
+        // Non-critical: we continue to delete the project even if image deletion fails
+      }
+    }
+
+    // 3. Delete the project node itself
     const projectRef = ref(database, `projects/${id}`);
     await remove(projectRef);
   } catch (err) {
@@ -759,6 +799,87 @@ export async function uploadProjectImage(file: File): Promise<string> {
     return downloadURL;
   } catch (err) {
     console.error("Error uploading project image:", err);
+    throw err;
+  }
+}
+
+/**
+ * WBS CRUD Functions
+ */
+
+export async function createWbsItem(
+  wbsItem: Omit<WbsItem, "id">
+): Promise<string> {
+  try {
+    const { push, set } = await import("firebase/database");
+    const wbsRef = ref(database, `wbs/${wbsItem.projectId}`);
+    const newItemRef = push(wbsRef);
+
+    if (!newItemRef.key) {
+      throw new Error("Failed to generate WBS item ID");
+    }
+
+    await set(newItemRef, wbsItem);
+    return newItemRef.key;
+  } catch (err) {
+    console.error("Error creating WBS item:", err);
+    throw err;
+  }
+}
+
+export async function getWbsItemsByProject(
+  projectId: string
+): Promise<WbsItem[]> {
+  try {
+    const wbsRef = ref(database, `wbs/${projectId}`);
+    const snapshot = await get(wbsRef);
+
+    if (!snapshot.exists()) {
+      return [];
+    }
+
+    const wbsObj = snapshot.val() as Record<string, unknown>;
+    const items = Object.entries(wbsObj).map(([id, raw]) => {
+      const value = raw as Record<string, unknown>;
+      return {
+        id,
+        ...value,
+      } as WbsItem;
+    });
+
+    // Sort by order
+    return items.sort((a, b) => (a.order || 0) - (b.order || 0));
+  } catch (err) {
+    console.error("Error fetching WBS items:", err);
+    throw err;
+  }
+}
+
+export async function updateWbsItem(
+  projectId: string,
+  itemId: string,
+  updates: Partial<WbsItem>
+): Promise<void> {
+  try {
+    const { update } = await import("firebase/database");
+    const itemRef = ref(database, `wbs/${projectId}/${itemId}`);
+    await update(itemRef, updates);
+  } catch (err) {
+    console.error("Error updating WBS item:", err);
+    throw err;
+  }
+}
+
+export async function deleteWbsItem(
+  projectId: string,
+  itemId: string
+): Promise<void> {
+  try {
+    const { remove } = await import("firebase/database");
+    const itemRef = ref(database, `wbs/${projectId}/${itemId}`);
+    await remove(itemRef);
+  } catch (err) {
+    console.error("Error deleting WBS item:", err);
     throw err;
   }
 }

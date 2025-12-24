@@ -1,15 +1,22 @@
 import type { FC } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
+
 import {
   createProject,
   deleteProject,
   getAllProjects,
+  getAllUserProfiles,
   updateProject,
   uploadProjectImage,
 } from "../../services/firebaseService";
 import type { Project } from "../../types_interfaces/project";
+import type { UserProfile } from "../../types_interfaces/userProfile";
+
 import { ConfirmDialog } from "../common/ConfirmDialog";
+import { LoadingSpinner } from "../common/LoadingSpinner";
 import { Toast } from "../common/Toast";
 
 interface ProjectsModalProps {
@@ -18,7 +25,9 @@ interface ProjectsModalProps {
 }
 
 export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -36,9 +45,15 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
     description: "",
     userRole: "",
     usedSkills: [],
+    shareholders: [],
     imageUrl: "",
   });
   const [skillInput, setSkillInput] = useState("");
+  const [shareholderInput, setShareholderInput] = useState("");
+  const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -48,6 +63,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
   const [projectToDeleteId, setProjectToDeleteId] = useState<string | null>(
     null
   );
+  const [processing, setProcessing] = useState(false);
 
   const loadProjects = useCallback(async () => {
     setLoading(true);
@@ -62,11 +78,37 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
     }
   }, []);
 
+  const loadUserProfiles = useCallback(async () => {
+    try {
+      const data = await getAllUserProfiles();
+      setUserProfiles(data);
+    } catch (error) {
+      console.error("Error loading user profiles:", error);
+    }
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
+      resetForm();
       loadProjects();
+      loadUserProfiles();
     }
-  }, [isOpen, loadProjects]);
+  }, [isOpen, loadProjects, loadUserProfiles]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowUserDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -110,11 +152,31 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
     }));
   };
 
+  const handleAddShareholder = () => {
+    if (!shareholderInput.trim()) return;
+    if (!(formData.shareholders || []).includes(shareholderInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        shareholders: [...(prev.shareholders || []), shareholderInput.trim()],
+      }));
+    }
+    setShareholderInput("");
+  };
+
+  const handleRemoveShareholder = (shareholder: string) => {
+    setFormData(prev => ({
+      ...prev,
+      shareholders: (prev.shareholders || []).filter(s => s !== shareholder),
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
 
+    setProcessing(true);
     setLoading(true);
+
     try {
       const now = new Date().toISOString();
       if (editingProject) {
@@ -139,6 +201,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
       setToast({ message: "Failed to save project.", type: "error" });
     } finally {
       setLoading(false);
+      setProcessing(false);
     }
   };
 
@@ -154,8 +217,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
       description: "",
       userRole: "",
       usedSkills: [],
+      shareholders: [],
       imageUrl: "",
     });
+    setSkillInput("");
+    setShareholderInput("");
   };
 
   const handleEdit = (project: Project) => {
@@ -170,8 +236,10 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
       description: project.description,
       userRole: project.userRole,
       usedSkills: project.usedSkills,
+      shareholders: project.shareholders || [],
       imageUrl: project.imageUrl || "",
     });
+
     // Scroll to top of the modal content to see the form
     const modalContent = document.querySelector(".contact-modal-content");
     if (modalContent) modalContent.scrollTop = 0;
@@ -184,6 +252,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
 
   const executeDelete = async () => {
     if (!projectToDeleteId) return;
+    setProcessing(true);
     try {
       await deleteProject(projectToDeleteId);
       setToast({ message: "Project deleted.", type: "success" });
@@ -194,6 +263,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
     } finally {
       setIsConfirmOpen(false);
       setProjectToDeleteId(null);
+      setProcessing(false);
     }
   };
 
@@ -338,6 +408,161 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                 {uploading && (
                   <small style={{ color: "var(--accent)" }}>Uploading...</small>
                 )}
+              </div>
+
+              <div className="auth-form-group" style={{ position: "relative" }}>
+                <label>Shareholders</label>
+                <div
+                  style={{ display: "flex", gap: "8px", marginBottom: "8px" }}
+                >
+                  <input
+                    type="text"
+                    value={shareholderInput}
+                    onChange={e => {
+                      setShareholderInput(e.target.value);
+                      setShowUserDropdown(true);
+                    }}
+                    onFocus={() => setShowUserDropdown(true)}
+                    className="auth-input"
+                    style={{ flex: 1 }}
+                    placeholder="Search by name or email..."
+                    onKeyDown={e => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddShareholder();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddShareholder}
+                    className="auth-button"
+                    style={{ padding: "8px 16px" }}
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {/* User Dropdown */}
+                {showUserDropdown && shareholderInput.trim() !== "" && (
+                  <div
+                    ref={dropdownRef}
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      right: 0,
+                      maxHeight: "200px",
+                      overflowY: "auto",
+                      backgroundColor: "var(--card-bg)",
+                      border: "1px solid var(--card-border)",
+                      borderRadius: "8px",
+                      zIndex: 100,
+                      boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {userProfiles
+                      .filter(user => {
+                        const search = shareholderInput.toLowerCase();
+                        return (
+                          (user.name || "").toLowerCase().includes(search) ||
+                          user.email.toLowerCase().includes(search)
+                        );
+                      })
+                      .map(user => (
+                        <div
+                          key={user.uid}
+                          onClick={() => {
+                            if (
+                              !(formData.shareholders || []).includes(
+                                user.email
+                              )
+                            ) {
+                              setFormData(prev => ({
+                                ...prev,
+                                shareholders: [
+                                  ...(prev.shareholders || []),
+                                  user.email,
+                                ],
+                              }));
+                            }
+                            setShareholderInput("");
+                            setShowUserDropdown(false);
+                          }}
+                          style={{
+                            padding: "10px 15px",
+                            cursor: "pointer",
+                            borderBottom: "1px solid var(--card-border)",
+                            transition: "background 0.2s",
+                          }}
+                          className="user-selection-item"
+                          onMouseEnter={e =>
+                            (e.currentTarget.style.backgroundColor =
+                              "rgba(255,255,255,0.05)")
+                          }
+                          onMouseLeave={e =>
+                            (e.currentTarget.style.backgroundColor =
+                              "transparent")
+                          }
+                        >
+                          <div
+                            style={{ fontWeight: "600", fontSize: "0.9rem" }}
+                          >
+                            {user.name || "Unknown User"}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "0.8rem",
+                              color: "var(--accent)",
+                            }}
+                          >
+                            {user.email}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "0.7rem",
+                              color: "var(--text-muted)",
+                            }}
+                          >
+                            UID: {user.uid}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {(formData.shareholders || []).map(sh => (
+                    <span
+                      key={sh}
+                      className="tag"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        background: "rgba(56, 189, 248, 0.1)",
+                        color: "var(--accent)",
+                      }}
+                    >
+                      {sh}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveShareholder(sh)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "inherit",
+                          cursor: "pointer",
+                          fontSize: "1rem",
+                          lineHeight: 1,
+                        }}
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
 
               <div className="auth-form-group">
@@ -490,6 +715,19 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                                 E
                               </button>
                               <button
+                                className="track-edit-button"
+                                style={{
+                                  padding: "2px 6px",
+                                  backgroundColor: "var(--accent)",
+                                }}
+                                onClick={() => {
+                                  onClose();
+                                  navigate(`/wbs/${p.id}`);
+                                }}
+                              >
+                                WBS
+                              </button>
+                              <button
                                 className="track-delete-button"
                                 style={{ padding: "2px 6px" }}
                                 onClick={() => handleDeleteClick(p.id!)}
@@ -546,6 +784,8 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
           setProjectToDeleteId(null);
         }}
       />
+
+      {processing && <LoadingSpinner />}
     </div>
   );
 };

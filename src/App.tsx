@@ -6,8 +6,11 @@ import { Header } from "./components/layout/Header";
 import { Cpd } from "./components/pages/Cpd";
 import { Intro } from "./components/pages/Intro";
 import { ProjectsView } from "./components/pages/ProjectsView";
+import { WbsView } from "./components/pages/WbsView";
 import { I18nProvider } from "./i18n/I18nProvider";
+
 import "./styles.css";
+
 import { TracksProvider } from "./tracks/TracksProvider";
 
 function App() {
@@ -23,6 +26,7 @@ function App() {
                 <Route path="/" element={<Intro />} />
                 <Route path="/cpd" element={<Cpd />} />
                 <Route path="/projects" element={<ProjectsView />} />
+                <Route path="/wbs/:projectId" element={<WbsView />} />
               </Routes>
             </main>
             <Footer />
