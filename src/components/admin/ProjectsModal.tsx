@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
@@ -34,6 +34,8 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
   const [uploading, setUploading] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [formData, setFormData] = useState<
     Omit<Project, "id" | "createdAt" | "updatedAt">
   >({
@@ -95,6 +97,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
       loadUserProfiles();
     }
   }, [isOpen, loadProjects, loadUserProfiles]);
+
+  // Reset to page 1 when search or itemsPerPage changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, itemsPerPage]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -274,6 +281,12 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
       p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.usedSkills.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const paginatedProjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredProjects.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredProjects, currentPage, itemsPerPage]);
 
   if (!isOpen) return null;
 
@@ -651,14 +664,54 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
               Project List
             </h3>
 
-            <div className="auth-form-group" style={{ marginBottom: "16px" }}>
+            <div
+              className="auth-form-group"
+              style={{
+                marginBottom: "16px",
+                display: "flex",
+                flexDirection: "row",
+                gap: "8px",
+                alignItems: "center",
+              }}
+            >
               <input
                 type="text"
                 placeholder="Search projects..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className="auth-input"
+                style={{ flex: 1, marginBottom: 0 }}
               />
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "4px" }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "var(--text-muted)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Show:
+                </span>
+                <select
+                  value={itemsPerPage}
+                  onChange={e => setItemsPerPage(Number(e.target.value))}
+                  className="auth-input"
+                  style={{
+                    width: "70px",
+                    padding: "4px 8px",
+                    marginBottom: 0,
+                    cursor: "pointer",
+                  }}
+                >
+                  {[5, 10, 20, 30].map(val => (
+                    <option key={val} value={val}>
+                      {val}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div
@@ -677,7 +730,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                     gap: "16px",
                   }}
                 >
-                  {filteredProjects.map(p => (
+                  {paginatedProjects.map(p => (
                     <div
                       key={p.id}
                       className="user-mobile-card"
@@ -759,6 +812,59 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div
+                  className="pagination-controls"
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: "15px",
+                    padding: "15px 0 5px",
+                    borderTop: "1px solid rgba(255,255,255,0.1)",
+                    marginTop: "15px",
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="chip"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    style={{
+                      opacity: currentPage === 1 ? 0.5 : 1,
+                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                      padding: "4px 10px",
+                      fontSize: "0.8rem",
+                    }}
+                  >
+                    &larr; Prev
+                  </button>
+                  <span
+                    style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}
+                  >
+                    Page <strong>{currentPage}</strong> of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="chip"
+                    disabled={currentPage === totalPages}
+                    onClick={() =>
+                      setCurrentPage(p => Math.min(totalPages, p + 1))
+                    }
+                    style={{
+                      opacity: currentPage === totalPages ? 0.5 : 1,
+                      cursor:
+                        currentPage === totalPages ? "not-allowed" : "pointer",
+                      padding: "4px 10px",
+                      fontSize: "0.8rem",
+                    }}
+                  >
+                    Next &rarr;
+                  </button>
                 </div>
               )}
             </div>

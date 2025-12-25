@@ -5,8 +5,8 @@
   "targets": {
     "rootbridge-9b225": {
       "hosting": {
-        "ssdcpd": [
-          "ssdcpd"
+        "ssdcpd-react": [
+          "ssdcpd-react"
         ]
       }
     }

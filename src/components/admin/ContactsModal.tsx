@@ -23,7 +23,7 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<"all" | "responsed" | "pending">("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const [responseTexts, setResponseTexts] = useState<Record<string, string>>(
     {}
@@ -69,10 +69,10 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen, loadAllContacts]);
 
-  // Reset to page 1 when search or filter changes
+  // Reset to page 1 when search, filter, or itemsPerPage changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filter]);
+  }, [searchTerm, filter, itemsPerPage]);
 
   const handleResponseChange = (id: string, value: string) => {
     setResponseTexts(prev => ({ ...prev, [id]: value }));
@@ -166,11 +166,11 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
     });
   }, [contacts, searchTerm, filter]);
 
-  const totalPages = Math.ceil(filteredContacts.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
   const paginatedContacts = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredContacts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredContacts, currentPage]);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredContacts.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredContacts, currentPage, itemsPerPage]);
 
   if (!isOpen) return null;
 
@@ -192,14 +192,52 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
 
         <h2 className="auth-modal-title">Admin: All Contacts</h2>
 
-        <div className="auth-form-group" style={{ marginBottom: "16px" }}>
+        <div
+          className="auth-form-group"
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            flexDirection: "row",
+            gap: "10px",
+            alignItems: "center",
+          }}
+        >
           <input
             type="text"
             placeholder="Search by name, email, subject, or message..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="auth-input"
+            style={{ flex: 1, marginBottom: 0 }}
           />
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--text-muted)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Show:
+            </span>
+            <select
+              value={itemsPerPage}
+              onChange={e => setItemsPerPage(Number(e.target.value))}
+              className="auth-input"
+              style={{
+                width: "70px",
+                padding: "6px 8px",
+                marginBottom: 0,
+                cursor: "pointer",
+              }}
+            >
+              {[5, 10, 20, 30].map(val => (
+                <option key={val} value={val}>
+                  {val}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div

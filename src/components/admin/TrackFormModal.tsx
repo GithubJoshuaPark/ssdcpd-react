@@ -83,6 +83,7 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({
     setLoading(true);
 
     try {
+      const now = new Date().toISOString();
       const trackData: Omit<Track, "id"> = {
         title: title.trim(),
         category,
@@ -97,6 +98,9 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({
               .map(t => t.trim())
               .filter(Boolean)
           : undefined,
+        updatedAt: now,
+        // If editing, keep original createdAt if it exists, otherwise use now
+        createdAt: isEditMode ? track?.createdAt || now : now,
       };
 
       if (isEditMode && track?.id) {

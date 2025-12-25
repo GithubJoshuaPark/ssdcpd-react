@@ -120,6 +120,8 @@ export async function getAllTracks(): Promise<Track[]> {
         short_ko: value.short_ko ? String(value.short_ko) : undefined,
         url: value.url ? String(value.url) : undefined,
         tags: Array.isArray(value.tags) ? (value.tags as string[]) : undefined,
+        createdAt: value.createdAt as string | number | undefined,
+        updatedAt: value.updatedAt as string | number | undefined,
       };
     });
 
