@@ -1,12 +1,15 @@
 import type { FC } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   deleteContact,
   getAllContacts,
+  sendEmailByAdminFunction,
   updateContactResponse,
 } from "../../services/firebaseService";
 import type { Contact } from "../../types_interfaces/contact";
 import { ConfirmDialog } from "../common/ConfirmDialog";
+import { LoadingSpinner } from "../common/LoadingSpinner";
+import { RichEditor } from "../common/RichEditor";
 import { Toast } from "../common/Toast";
 
 interface ContactsModalProps {
@@ -19,6 +22,9 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<"all" | "responsed" | "pending">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
   const [responseTexts, setResponseTexts] = useState<Record<string, string>>(
     {}
   );
@@ -63,19 +69,58 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen, loadAllContacts]);
 
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filter]);
+
   const handleResponseChange = (id: string, value: string) => {
     setResponseTexts(prev => ({ ...prev, [id]: value }));
   };
 
   const handleSaveResponse = async (id: string) => {
     const responseText = responseTexts[id];
+    const contact = contacts.find(c => c.id === id);
+
+    setLoading(true);
     try {
       await updateContactResponse(id, responseText);
-      setToast({ message: "Response saved successfully!", type: "success" });
-      loadAllContacts();
+
+      // 이메일 발송 추가
+      if (contact && responseText) {
+        try {
+          // HTML에서 태그를 제거한 평문 버전 (간단한 정규식)
+          const plainText = responseText.replace(/<[^>]*>/g, "");
+
+          await sendEmailByAdminFunction(
+            contact.email,
+            `Response to your inquiry: ${contact.subject}`,
+            `Hello ${contact.name},\n\nThank you for your contact. Here is our response:\n\n${plainText}\n\nBest regards,\nSSDCPD Admin`,
+            `<div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+              <p>Hello <strong>${contact.name}</strong>,</p>
+              <p>Thank you for your contact. Here is our response:</p>
+              <div style="padding: 15px; background-color: #f4f4f4; border-left: 4px solid #2563eb; margin: 20px 0; border-radius: 4px;">
+                ${responseText}
+              </div>
+              <p>Best regards,<br/><strong>SSDCPD Admin</strong></p>
+            </div>`
+          );
+          console.log("Response email process triggered.");
+        } catch (emailErr) {
+          console.error(
+            "Failed to send email, but response was saved:",
+            emailErr
+          );
+        }
+      }
+
+      setToast({ message: "Response saved and email sent!", type: "success" });
+      await loadAllContacts();
     } catch (error) {
       console.error("Error saving response:", error);
       setToast({ message: "Failed to save response.", type: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,36 +131,46 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
 
   const executeDelete = async () => {
     if (!contactToDeleteId) return;
+    setLoading(true);
     try {
       await deleteContact(contactToDeleteId);
       setToast({ message: "Message deleted.", type: "success" });
-      loadAllContacts();
+      await loadAllContacts();
     } catch (error) {
       console.error("Error deleting contact:", error);
       setToast({ message: "Failed to delete message.", type: "error" });
     } finally {
       setIsConfirmOpen(false);
       setContactToDeleteId(null);
+      setLoading(false);
     }
   };
 
-  const filteredContacts = contacts.filter(c => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.message.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredContacts = useMemo(() => {
+    return contacts.filter(c => {
+      const matchesSearch =
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.message.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (filter === "responsed") {
-      return matchesSearch && !!c.response;
-    }
+      if (filter === "responsed") {
+        return matchesSearch && !!c.response;
+      }
 
-    if (filter === "pending") {
-      return matchesSearch && !c.response;
-    }
+      if (filter === "pending") {
+        return matchesSearch && !c.response;
+      }
 
-    return matchesSearch;
-  });
+      return matchesSearch;
+    });
+  }, [contacts, searchTerm, filter]);
+
+  const totalPages = Math.ceil(filteredContacts.length / ITEMS_PER_PAGE);
+  const paginatedContacts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredContacts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredContacts, currentPage]);
 
   if (!isOpen) return null;
 
@@ -123,7 +178,13 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
     <div className="auth-modal-overlay">
       <div
         className="auth-modal contact-modal-container"
-        style={{ maxWidth: "900px", width: "95%", maxHeight: "90vh" }}
+        style={{
+          maxWidth: "900px",
+          width: "95%",
+          maxHeight: "90vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
         <button className="auth-modal-close" onClick={onClose}>
           &times;
@@ -145,31 +206,29 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
           className="filter-group"
           style={{ marginBottom: "20px", display: "flex", gap: "10px" }}
         >
-          <button
-            className={`chip ${filter === "all" ? "chip-active" : ""}`}
-            onClick={() => setFilter("all")}
-          >
-            All Contacts
-          </button>
-          <button
-            className={`chip ${filter === "responsed" ? "chip-active" : ""}`}
-            onClick={() => setFilter("responsed")}
-          >
-            Responsed Only
-          </button>
-          <button
-            className={`chip ${filter === "pending" ? "chip-active" : ""}`}
-            onClick={() => setFilter("pending")}
-          >
-            Not yet
-          </button>
+          {(["all", "responsed", "pending"] as const).map(type => (
+            <button
+              key={type}
+              className={`chip ${filter === type ? "chip-active" : ""}`}
+              onClick={() => setFilter(type)}
+            >
+              {type === "all"
+                ? "All Contacts"
+                : type === "responsed"
+                ? "Responsed Only"
+                : "Not yet"}
+            </button>
+          ))}
         </div>
 
-        <div className="contact-modal-content" style={{ overflowY: "auto" }}>
+        <div
+          className="contact-modal-content"
+          style={{ overflowY: "auto", flex: 1 }}
+        >
           <div className="contact-messages-list" style={{ maxHeight: "none" }}>
             {loading && contacts.length === 0 ? (
               <p>Loading contacts...</p>
-            ) : filteredContacts.length === 0 ? (
+            ) : paginatedContacts.length === 0 ? (
               <p>
                 {searchTerm
                   ? "No matching contacts found."
@@ -181,9 +240,10 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
                   display: "flex",
                   flexDirection: "column",
                   gap: "20px",
+                  marginTop: "5px",
                 }}
               >
-                {filteredContacts.map(c => (
+                {paginatedContacts.map(c => (
                   <div
                     key={c.id}
                     className="card"
@@ -192,13 +252,7 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
                       background: "rgba(255,255,255,0.03)",
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "10px",
-                      }}
-                    >
+                    <div className="contact-card-header">
                       <div>
                         <strong style={{ color: "var(--accent)" }}>
                           {c.name}
@@ -254,19 +308,13 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
                       >
                         Admin Response:
                       </label>
-                      <textarea
-                        className="auth-input"
-                        style={{
-                          width: "100%",
-                          minHeight: "80px",
-                          marginBottom: "10px",
-                          fontSize: "0.9rem",
-                        }}
+                      <RichEditor
                         value={responseTexts[c.id!] || ""}
-                        onChange={e =>
-                          handleResponseChange(c.id!, e.target.value)
+                        onChange={content =>
+                          handleResponseChange(c.id!, content)
                         }
                         placeholder="Write your response here..."
+                        minHeight="120px"
                       />
                       <div
                         style={{
@@ -297,6 +345,48 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
             )}
           </div>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div
+            className="pagination-controls"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "15px",
+              padding: "20px 0 0",
+              borderTop: "1px solid rgba(255,255,255,0.1)",
+              marginTop: "10px",
+            }}
+          >
+            <button
+              className="chip"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              style={{
+                opacity: currentPage === 1 ? 0.5 : 1,
+                cursor: currentPage === 1 ? "not-allowed" : "pointer",
+              }}
+            >
+              &larr; Prev
+            </button>
+            <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+              Page <strong>{currentPage}</strong> of {totalPages}
+            </span>
+            <button
+              className="chip"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              style={{
+                opacity: currentPage === totalPages ? 0.5 : 1,
+                cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+              }}
+            >
+              Next &rarr;
+            </button>
+          </div>
+        )}
       </div>
 
       {toast && (
@@ -306,6 +396,8 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
           onClose={() => setToast(null)}
         />
       )}
+
+      {loading && <LoadingSpinner message="Processing..." />}
 
       <ConfirmDialog
         isOpen={isConfirmOpen}

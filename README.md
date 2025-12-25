@@ -267,6 +267,13 @@ npm run preview
 # Firebase CLI 설치 (최초 1회)
 npm install -g firebase-tools
 
+# # 이메일 주소 설정
+# firebase functions:secrets:set EMAIL_USER
+# # (명령어 입력 후 실제 이메일 주소를 입력하라는 메시지가 뜨면 입력합니다)
+# # 이메일 비밀번호(앱 비밀번호) 설정
+# firebase functions:secrets:set EMAIL_PASS
+# # (비밀번호 입력 시 보안을 위해 화면에는 보이지 않습니다)
+
 # Firebase 로그인
 firebase login
 
@@ -528,6 +535,37 @@ cd functions
 npm run deploy
 # 또는 프로젝트 루트에서
 firebase deploy --only functions
+```
+
+---
+
+```bash
+1단계: 구글 계정 2단계 인증 활성화 (필수)
+앱 비밀번호는 2단계 인증이 설정된 계정에서만 생성할 수 있습니다. 이미 설정되어 있다면 2단계로 넘어가세요.
+
+구글 계정 관리(Google My Account)에 접속합니다.
+왼쪽 메뉴에서 [보안] 탭을 클릭합니다.
+'Google에 로그인하는 방법' 섹션에서 **[2단계 인증]**이 '사용'으로 되어 있는지 확인합니다.
+만약 '사용 안함'이라면, 클릭하여 설정을 완료하세요.
+
+2단계: 앱 비밀번호 생성하기
+[보안] 탭 내의 [2단계 인증] 항목을 다시 클릭합니다. (비밀번호 확인 과정을 거칠 수 있습니다.)
+화면 맨 아래로 스크롤하여 [앱 비밀번호] 항목을 찾습니다. (항목이 보이지 않으면 검색창에 '앱 비밀번호'라고 입력하세요.)
+'앱 선택'에서 **기타(맞춤 이름)**를 선택합니다.
+이름에 구분하기 좋게 Firebase-SSDCPD 또는 Email-Service라고 입력하고 [생성] 버튼을 누릅니다.
+화면에 나타나는 노란색 박스 안의 16자리 코드를 복사합니다. (이 코드는 다시 볼 수 없으므로 바로 복사해 두세요.)
+
+3단계: .env 파일 업데이트
+복사한 16자리 암호를 functions/.env
+ 파일의 EMAIL_PASS 값으로 넣습니다. (공백 없이 입력하세요)
+
+4단계: 반영 확인
+이미 배포를 한 번 완료하셨으므로, .env
+ 파일만 수정하신 뒤에는 다시 배포를 수행해야 Firebase 서버에 적용됩니다.
+
+ # 수정된 .env와 함께 다시 배포
+firebase deploy --only functions
+
 ```
 
 ---

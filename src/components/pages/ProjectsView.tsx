@@ -6,6 +6,7 @@ import { useAuth } from "../../auth/useAuth";
 
 import { getAllProjects } from "../../services/firebaseService";
 import type { Project } from "../../types_interfaces/project";
+import { RichEditor } from "../common/RichEditor";
 
 export const ProjectsView: FC = () => {
   const navigate = useNavigate();
@@ -231,17 +232,9 @@ export const ProjectsView: FC = () => {
                     )}
                 </div>
 
-                <p
-                  style={{
-                    fontSize: "0.95rem",
-                    color: "var(--text-muted)",
-                    lineHeight: "1.6",
-                    marginBottom: "20px",
-                    flex: 1,
-                  }}
-                >
-                  {project.description}
-                </p>
+                <div style={{ flex: 1, marginBottom: "15px" }}>
+                  <RichEditor value={project.description} readOnly={true} />
+                </div>
 
                 <div
                   style={{

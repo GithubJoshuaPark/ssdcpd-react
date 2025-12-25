@@ -1,80 +1,89 @@
 // src/components/admin/TrackFormModal.tsx
-import type { FC, FormEvent } from 'react'
-import { useState, useEffect } from 'react'
-import { createTrack, updateTrack } from '../../services/firebaseService'
-import type { Track, TrackCategory, TrackStatus } from '../../types_interfaces/track'
-import { Toast } from '../common/Toast'
+import type { FC, FormEvent } from "react";
+import { useEffect, useState } from "react";
+import { createTrack, updateTrack } from "../../services/firebaseService";
+import type {
+  Track,
+  TrackCategory,
+  TrackStatus,
+} from "../../types_interfaces/track";
+import { RichEditor } from "../common/RichEditor";
+import { Toast } from "../common/Toast";
 
 interface TrackFormModalProps {
-  isOpen: boolean
-  onClose: (shouldReload?: boolean) => void
-  track?: Track | null
+  isOpen: boolean;
+  onClose: (shouldReload?: boolean) => void;
+  track?: Track | null;
 }
 
-export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track }) => {
-  const isEditMode = !!track
+export const TrackFormModal: FC<TrackFormModalProps> = ({
+  isOpen,
+  onClose,
+  track,
+}) => {
+  const isEditMode = !!track;
 
-  const [title, setTitle] = useState('')
-  const [category, setCategory] = useState<TrackCategory>('systems')
-  const [level, setLevel] = useState('')
-  const [status, setStatus] = useState<TrackStatus>('Active')
-  const [short, setShort] = useState('')
-  const [shortKo, setShortKo] = useState('')
-  const [url, setUrl] = useState('')
-  const [tags, setTags] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<TrackCategory>("systems");
+  const [level, setLevel] = useState("");
+  const [status, setStatus] = useState<TrackStatus>("Active");
+  const [short, setShort] = useState("");
+  const [shortKo, setShortKo] = useState("");
+  const [url, setUrl] = useState("");
+  const [tags, setTags] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize form with track data when editing
   useEffect(() => {
     if (isOpen && track) {
-      setTitle(track.title || '')
-      setCategory(track.category || 'systems')
-      setLevel(track.level || '')
-      setStatus(track.status || 'Active')
-      setShort(track.short || '')
-      setShortKo(track.short_ko || '')
-      setUrl(track.url || '')
-      setTags(track.tags?.join(', ') || '')
+      setTitle(track.title || "");
+      setCategory(track.category || "systems");
+      setLevel(track.level || "");
+      setStatus(track.status || "Active");
+      setShort(track.short || "");
+      setShortKo(track.short_ko || "");
+      setUrl(track.url || "");
+      setTags(track.tags?.join(", ") || "");
     } else if (isOpen && !track) {
       // Reset form for new track
-      setTitle('')
-      setCategory('systems')
-      setLevel('')
-      setStatus('Active')
-      setShort('')
-      setShortKo('')
-      setUrl('')
-      setTags('')
+      setTitle("");
+      setCategory("systems");
+      setLevel("");
+      setStatus("Active");
+      setShort("");
+      setShortKo("");
+      setUrl("");
+      setTags("");
     }
-  }, [isOpen, track])
+  }, [isOpen, track]);
 
   // ESC key to close
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
+      if (e.key === "Escape" && isOpen) {
+        onClose();
       }
-    }
+    };
 
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [isOpen, onClose])
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    setError(null);
 
     // Validation
     if (!title.trim()) {
-      setError('Title is required')
-      return
+      setError("Title is required");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
-      const trackData: Omit<Track, 'id'> = {
+      const trackData: Omit<Track, "id"> = {
         title: title.trim(),
         category,
         level: level.trim() || undefined,
@@ -82,39 +91,51 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track
         short: short.trim() || undefined,
         short_ko: shortKo.trim() || undefined,
         url: url.trim() || undefined,
-        tags: tags.trim() ? tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
-      }
+        tags: tags.trim()
+          ? tags
+              .split(",")
+              .map(t => t.trim())
+              .filter(Boolean)
+          : undefined,
+      };
 
       if (isEditMode && track?.id) {
-        await updateTrack(track.id, trackData)
+        await updateTrack(track.id, trackData);
       } else {
-        await createTrack(trackData)
+        await createTrack(trackData);
       }
 
-      onClose(true) // Close and reload
+      onClose(true); // Close and reload
     } catch (err) {
-      console.error('Error saving track:', err)
-      setError(`Failed to ${isEditMode ? 'update' : 'create'} track`)
+      console.error("Error saving track:", err);
+      setError(`Failed to ${isEditMode ? "update" : "create"} track`);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
-  const categories: TrackCategory[] = ['systems', 'scripting', 'backend', 'lowlevel', 'c/c++', 'frontend']
-  const statuses: TrackStatus[] = ['Active', 'Planned', 'Deprecated']
+  const categories: TrackCategory[] = [
+    "systems",
+    "scripting",
+    "backend",
+    "lowlevel",
+    "c/c++",
+    "frontend",
+  ];
+  const statuses: TrackStatus[] = ["Active", "Planned", "Deprecated"];
 
   return (
     <>
       <div className="auth-modal-overlay" onClick={() => onClose()}>
-        <div className="track-form-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="track-form-modal" onClick={e => e.stopPropagation()}>
           <button className="auth-modal-close" onClick={() => onClose()}>
             ✕
           </button>
 
           <h2 className="track-form-title">
-            {isEditMode ? 'Edit Track' : 'Add New Track'}
+            {isEditMode ? "Edit Track" : "Add New Track"}
           </h2>
 
           <form className="track-form" onSubmit={handleSubmit}>
@@ -126,7 +147,7 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track
                 type="text"
                 className="auth-input"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={e => setTitle(e.target.value)}
                 required
                 autoFocus
               />
@@ -140,11 +161,13 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track
                   id="track-category"
                   className="auth-input"
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as TrackCategory)}
+                  onChange={e => setCategory(e.target.value as TrackCategory)}
                   required
                 >
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -156,7 +179,7 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track
                   type="text"
                   className="auth-input"
                   value={level}
-                  onChange={(e) => setLevel(e.target.value)}
+                  onChange={e => setLevel(e.target.value)}
                   placeholder="e.g., Beginner, Advanced"
                 />
               </div>
@@ -169,10 +192,12 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track
                 id="track-status"
                 className="auth-input"
                 value={status}
-                onChange={(e) => setStatus(e.target.value as TrackStatus)}
+                onChange={e => setStatus(e.target.value as TrackStatus)}
               >
-                {statuses.map((stat) => (
-                  <option key={stat} value={stat}>{stat}</option>
+                {statuses.map(stat => (
+                  <option key={stat} value={stat}>
+                    {stat}
+                  </option>
                 ))}
               </select>
             </div>
@@ -180,26 +205,22 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track
             {/* Description (EN) */}
             <div className="auth-form-group">
               <label htmlFor="track-short">Description (English)</label>
-              <textarea
-                id="track-short"
-                className="auth-input track-textarea"
+              <RichEditor
                 value={short}
-                onChange={(e) => setShort(e.target.value)}
-                rows={3}
+                onChange={setShort}
                 placeholder="Brief description in English"
+                minHeight="120px"
               />
             </div>
 
             {/* Description (KO) */}
             <div className="auth-form-group">
               <label htmlFor="track-short-ko">Description (Korean)</label>
-              <textarea
-                id="track-short-ko"
-                className="auth-input track-textarea"
+              <RichEditor
                 value={shortKo}
-                onChange={(e) => setShortKo(e.target.value)}
-                rows={3}
+                onChange={setShortKo}
                 placeholder="간단한 설명 (한국어)"
+                minHeight="120px"
               />
             </div>
 
@@ -211,7 +232,7 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track
                 type="url"
                 className="auth-input"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={e => setUrl(e.target.value)}
                 placeholder="https://github.com/..."
               />
             </div>
@@ -224,7 +245,7 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track
                 type="text"
                 className="auth-input"
                 value={tags}
-                onChange={(e) => setTags(e.target.value)}
+                onChange={e => setTags(e.target.value)}
                 placeholder="python, docker, linux"
               />
             </div>
@@ -239,12 +260,12 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="auth-button"
-                disabled={loading}
-              >
-                {loading ? 'Saving...' : (isEditMode ? 'Update Track' : 'Create Track')}
+              <button type="submit" className="auth-button" disabled={loading}>
+                {loading
+                  ? "Saving..."
+                  : isEditMode
+                  ? "Update Track"
+                  : "Create Track"}
               </button>
             </div>
           </form>
@@ -253,12 +274,8 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({ isOpen, onClose, track
 
       {/* Error Toast */}
       {error && (
-        <Toast
-          message={error}
-          type="error"
-          onClose={() => setError(null)}
-        />
+        <Toast message={error} type="error" onClose={() => setError(null)} />
       )}
     </>
-  )
-}
+  );
+};

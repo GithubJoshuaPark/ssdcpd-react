@@ -1,8 +1,11 @@
+import { onValue, ref } from "firebase/database";
 import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
 import { useI18n } from "../../i18n/useI18n";
+import { database } from "../../services/firebaseService";
+import type { Contact } from "../../types_interfaces/contact";
 import { ContactsModal } from "../admin/ContactsModal";
 import { ProjectsModal } from "../admin/ProjectsModal";
 import { TracksModal } from "../admin/TracksModal";
@@ -26,6 +29,7 @@ export const Header: FC = () => {
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const [isCpdDropdownOpen, setIsCpdDropdownOpen] = useState(false);
   const [isHomeDropdownOpen, setIsHomeDropdownOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const adminDropdownRef = useRef<HTMLDivElement>(null);
   const cpdDropdownRef = useRef<HTMLDivElement>(null);
@@ -138,7 +142,7 @@ export const Header: FC = () => {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isAdminDropdownOpen, isCpdDropdownOpen]);
+  }, [isAdminDropdownOpen, isCpdDropdownOpen, isHomeDropdownOpen]);
 
   // ESC key to close admin dropdown
   useEffect(() => {
@@ -153,6 +157,25 @@ export const Header: FC = () => {
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
+
+  // Listen to pending contacts count (for admin)
+  useEffect(() => {
+    if (userProfile?.role === "admin") {
+      const contactsRef = ref(database, "contacts");
+      const unsubscribe = onValue(contactsRef, snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.val() as Record<string, Contact>;
+          const count = Object.values(data).filter(c => !c.response).length;
+          setPendingCount(count);
+        } else {
+          setPendingCount(0);
+        }
+      });
+      return () => unsubscribe();
+    } else {
+      setTimeout(() => setPendingCount(0), 0);
+    }
+  }, [userProfile?.role]);
 
   return (
     <>
@@ -288,6 +311,7 @@ export const Header: FC = () => {
                 aria-haspopup="true"
               >
                 Admin
+                {pendingCount > 0 && <span className="admin-status-dot"></span>}
                 <span
                   className={`dropdown-arrow ${
                     isAdminDropdownOpen ? "open" : ""
@@ -314,8 +338,17 @@ export const Header: FC = () => {
                   <button
                     className="admin-dropdown-item"
                     onClick={handleContactsClick}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      width: "100%",
+                    }}
                   >
-                    ✉️ Contacts
+                    <span>✉️ Contacts</span>
+                    {pendingCount > 0 && (
+                      <span className="notification-badge">{pendingCount}</span>
+                    )}
                   </button>
                   <button
                     className="admin-dropdown-item"

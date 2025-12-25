@@ -20,10 +20,12 @@
   "type": "commonjs",
   "dependencies": {
     "firebase-admin": "^13.6.0",
-    "firebase-functions": "^7.0.2"
+    "firebase-functions": "^7.0.2",
+    "nodemailer": "^7.0.12"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",
+    "@types/nodemailer": "^7.0.4",
     "typescript": "^5.9.3"
   }
 }

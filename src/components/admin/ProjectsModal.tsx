@@ -17,6 +17,7 @@ import type { UserProfile } from "../../types_interfaces/userProfile";
 
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { LoadingSpinner } from "../common/LoadingSpinner";
+import { RichEditor } from "../common/RichEditor";
 import { Toast } from "../common/Toast";
 
 interface ProjectsModalProps {
@@ -346,13 +347,13 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
 
               <div className="auth-form-group">
                 <label>Description</label>
-                <textarea
-                  name="description"
+                <RichEditor
                   value={formData.description}
-                  onChange={handleChange}
-                  className="auth-input"
-                  style={{ minHeight: "100px" }}
-                  required
+                  onChange={content =>
+                    setFormData(prev => ({ ...prev, description: content }))
+                  }
+                  placeholder="Enter project description..."
+                  minHeight="150px"
                 />
               </div>
 

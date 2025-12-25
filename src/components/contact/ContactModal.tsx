@@ -9,6 +9,7 @@ import {
 } from "../../services/firebaseService";
 import type { Contact } from "../../types_interfaces/contact";
 import { ConfirmDialog } from "../common/ConfirmDialog";
+import { RichEditor } from "../common/RichEditor";
 import { Toast } from "../common/Toast";
 
 interface ContactModalProps {
@@ -372,15 +373,7 @@ export const ContactModal: FC<ContactModalProps> = ({ isOpen, onClose }) => {
                         >
                           Response from Admin:
                         </strong>
-                        <p
-                          style={{
-                            fontSize: "0.85rem",
-                            margin: 0,
-                            color: "var(--text-main)",
-                          }}
-                        >
-                          {c.response}
-                        </p>
+                        <RichEditor value={c.response} readOnly={true} />
                       </div>
                     )}
                   </div>

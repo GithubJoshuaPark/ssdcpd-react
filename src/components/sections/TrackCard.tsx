@@ -1,31 +1,32 @@
-import type { FC } from 'react'
-import type { Track } from '../../types_interfaces/track'
-import { useI18n } from '../../i18n/useI18n'
+import type { FC } from "react";
+import { useI18n } from "../../i18n/useI18n";
+import type { Track } from "../../types_interfaces/track";
+import { RichEditor } from "../common/RichEditor";
 
 interface TrackCardProps {
-  track: Track
+  track: Track;
 }
 
 export const TrackCard: FC<TrackCardProps> = ({ track }) => {
-  const { t, lang } = useI18n()
+  const { t, lang } = useI18n();
 
   // vanilla js: currentLang === "ko" && track.short_ko ? track.short_ko : track.short;
   const description =
-    lang === 'ko' && typeof track.short_ko === 'string' && track.short_ko
+    lang === "ko" && typeof track.short_ko === "string" && track.short_ko
       ? (track.short_ko as string)
-      : ((track.short as string | undefined) ?? '')
+      : (track.short as string | undefined) ?? "";
 
   const hasRepoLink =
-    typeof track.url === 'string' &&
-    track.url !== '' &&
-    track.url !== '#' &&
+    typeof track.url === "string" &&
+    track.url !== "" &&
+    track.url !== "#" &&
     track.url !== null &&
-    track.url !== undefined
+    track.url !== undefined;
 
   // footer 텍스트 i18n 처리
   const footerText = hasRepoLink
-    ? t('track.footerPublic')       // 공개 리포지토리
-    : t('track.footerComing')       // 준비 중
+    ? t("track.footerPublic") // 공개 리포지토리
+    : t("track.footerComing"); // 준비 중
 
   return (
     <article className="card" data-category={track.category}>
@@ -36,8 +37,8 @@ export const TrackCard: FC<TrackCardProps> = ({ track }) => {
         </div>
         <span
           className={
-            'badge ' +
-            (track.status === 'Active' ? 'badge-primary' : 'badge-outline')
+            "badge " +
+            (track.status === "Active" ? "badge-primary" : "badge-outline")
           }
         >
           {track.status}
@@ -45,12 +46,14 @@ export const TrackCard: FC<TrackCardProps> = ({ track }) => {
       </div>
 
       {/* Body */}
-      <div className="card-body">{description}</div>
+      <div className="card-body">
+        <RichEditor value={description} readOnly={true} />
+      </div>
 
       {/* Tags */}
       {Array.isArray(track.tags) && track.tags.length > 0 && (
         <div className="card-tags">
-          {track.tags.map((tag) => (
+          {track.tags.map(tag => (
             <span key={String(tag)} className="tag">
               {String(tag)}
             </span>
@@ -69,7 +72,7 @@ export const TrackCard: FC<TrackCardProps> = ({ track }) => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <span>{t('track.viewRepo')}</span>
+            <span>{t("track.viewRepo")}</span>
             <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
               <path
                 fill="currentColor"
@@ -80,5 +83,5 @@ export const TrackCard: FC<TrackCardProps> = ({ track }) => {
         )}
       </div>
     </article>
-  )
-}
+  );
+};

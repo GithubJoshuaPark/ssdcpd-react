@@ -573,6 +573,29 @@ export async function deleteUserByAdminFunction(
   }
 }
 
+/**
+ * 관리자가 Cloud Function을 통해 답변 이메일 발송
+ */
+export async function sendEmailByAdminFunction(
+  to: string,
+  subject: string,
+  text: string,
+  html?: string
+): Promise<void> {
+  try {
+    const sendEmailCallable = httpsCallable<
+      { to: string; subject: string; text: string; html?: string },
+      { success: boolean; messageId: string }
+    >(functions, "sendEmail");
+
+    const result = await sendEmailCallable({ to, subject, text, html });
+    console.log("Email sent via Cloud Function:", result.data);
+  } catch (error) {
+    console.error("Error calling sendEmail function:", error);
+    throw error;
+  }
+}
+
 // ----- Contact functions -----
 
 /**

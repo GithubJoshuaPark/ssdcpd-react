@@ -6,6 +6,7 @@ import { useI18n } from "../../i18n/useI18n";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { CustomPrompt } from "../common/CustomPrompt";
 import { LoadingSpinner } from "../common/LoadingSpinner";
+import { RichEditor } from "../common/RichEditor";
 import { Toast, type ToastType } from "../common/Toast";
 
 import { multiFactor, type PhoneMultiFactorInfo } from "firebase/auth";
@@ -443,14 +444,12 @@ export const ProfileModal: FC<ProfileModalProps> = ({
             {/* 자기소개 */}
             <div className="auth-form-group">
               <label htmlFor="profile-bio">{t("profile.bio")}</label>
-              <textarea
-                id="profile-bio"
-                className="auth-input profile-textarea"
+              <RichEditor
                 value={bio}
-                onChange={e => setBio(e.target.value)}
-                rows={4}
+                onChange={setBio}
                 readOnly={isReadOnly}
-                disabled={isReadOnly}
+                placeholder="Tell us about yourself..."
+                minHeight="120px"
               />
             </div>
 
