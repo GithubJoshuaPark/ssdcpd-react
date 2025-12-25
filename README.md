@@ -270,12 +270,18 @@ npm install -g firebase-tools
 # Firebase 로그인
 firebase login
 
-# 배포
+# ssdcpd-react 배포
+cat .firebaserc_for_ssdcpd-react > .firebaserc
+cat firebase_for_ssdcpd-react.json > firebase.json
 firebase deploy --only hosting:ssdcpd-react
-firebase deploy --only hosting:ssdcpd
-```
-
 배포 후 [https://ssdcpd-react.web.app/](https://ssdcpd-react.web.app/)에서 확인 가능합니다.
+
+# ssdcpd 배포
+cat .firebaserc_for_ssdcpd > .firebaserc
+cat firebase_for_ssdcpd.json > firebase.json
+firebase deploy --only hosting:ssdcpd
+배포 후 [https://ssdcpd.web.app/](https://ssdcpd.web.app/)에서 확인 가능합니다.
+```
 
 ---
 

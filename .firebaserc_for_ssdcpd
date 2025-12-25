@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "rootbridge-9b225"
+  },
+  "targets": {
+    "rootbridge-9b225": {
+      "hosting": {
+        "ssdcpd": [
+          "ssdcpd"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
