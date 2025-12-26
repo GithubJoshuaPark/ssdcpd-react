@@ -9,9 +9,14 @@ import { ConfirmDialog } from "../common/ConfirmDialog";
 interface NoticesModalProps {
   isOpen: boolean;
   onClose: () => void;
+  filterRecipient?: string;
 }
 
-export const NoticesModal: FC<NoticesModalProps> = ({ isOpen, onClose }) => {
+export const NoticesModal: FC<NoticesModalProps> = ({
+  isOpen,
+  onClose,
+  filterRecipient,
+}) => {
   const { lang } = useI18n(); // Fix lint: 't' unused
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +98,16 @@ export const NoticesModal: FC<NoticesModalProps> = ({ isOpen, onClose }) => {
 
     // Check recipients
     let recipientMatch = false;
+    // If filtering by specific recipient (e.g. current user clicking the notice badge)
+    if (filterRecipient) {
+      if (Array.isArray(notice.recipients)) {
+        if (!notice.recipients.includes(filterRecipient)) return false;
+      } else if (typeof notice.recipients === "string") {
+        if (notice.recipients !== filterRecipient) return false;
+      }
+    }
+
+    // Standard search filter
     if (Array.isArray(notice.recipients)) {
       recipientMatch = notice.recipients.some(r =>
         r.toLowerCase().includes(term)
@@ -236,12 +251,14 @@ export const NoticesModal: FC<NoticesModalProps> = ({ isOpen, onClose }) => {
                         >
                           {expandedNoticeId === notice.id ? "Hide" : "View"}
                         </button>
-                        <button
-                          className="action-btn delete"
-                          onClick={e => handleDelete(notice.id, e)}
-                        >
-                          Del
-                        </button>
+                        {!filterRecipient && (
+                          <button
+                            className="action-btn delete"
+                            onClick={e => handleDelete(notice.id, e)}
+                          >
+                            Del
+                          </button>
+                        )}
                       </td>
                     </tr>
                     {expandedNoticeId === notice.id && (

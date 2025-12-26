@@ -478,6 +478,18 @@ export const Header: FC = () => {
       <ProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
+        onOpenNotices={() => {
+          // ProfileModal stays open or closes? Usually modal on modal stack.
+          // Let's close ProfileModal or keep it?
+          // User typically wants to see notices.
+          // Let's keep ProfileModal open or close it.
+          // Simpler to close ProfileModal as NoticesModal is large.
+          setIsProfileModalOpen(false);
+          setIsNoticesModalOpen(true);
+          // But wait, filterRecipient is based on currentUser.email in Header.
+          // Note: Header's NoticesModal assumes filterRecipient is ONLY current user if passed.
+          // We need to ensure state is managed.
+        }}
       />
 
       <UsersModal
@@ -503,6 +515,7 @@ export const Header: FC = () => {
       <NoticesModal
         isOpen={isNoticesModalOpen}
         onClose={() => setIsNoticesModalOpen(false)}
+        filterRecipient={currentUser?.email || undefined}
       />
 
       {showLogoutToast && (

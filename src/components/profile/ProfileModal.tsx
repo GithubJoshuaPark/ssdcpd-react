@@ -24,6 +24,7 @@ interface ProfileModalProps {
   onClose: () => void;
   targetProfile?: UserProfile;
   onUserDeleted?: () => void; // 사용자 삭제 후 콜백 (UsersModal 새로고침용)
+  onOpenNotices?: (email: string) => void;
 }
 
 export const ProfileModal: FC<ProfileModalProps> = ({
@@ -31,6 +32,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   onClose,
   targetProfile,
   onUserDeleted,
+  onOpenNotices,
 }) => {
   const {
     userProfile: currentUserProfile,
@@ -511,16 +513,21 @@ export const ProfileModal: FC<ProfileModalProps> = ({
             className="profile-modal-title"
             style={{ display: "flex", alignItems: "center", gap: "10px" }}
           >
-            {isReadOnly ? "User Profile" : t("profile.title")}
+            {isReadOnly ? "관리자 모드" : t("profile.title")}
             {!isReadOnly && noticeCount >= 1 && (
               <span
                 className="notification-badge"
+                onClick={e => {
+                  e.stopPropagation();
+                  onOpenNotices?.(currentUser?.email || "");
+                }}
                 style={{
                   backgroundColor: "var(--accent)",
                   color: "#fff",
                   fontSize: "1rem",
                   padding: "2px 10px",
                   borderRadius: "12px",
+                  cursor: "pointer",
                 }}
               >
                 {noticeCount}
@@ -583,6 +590,13 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                 value={displayProfile?.email || ""}
                 readOnly
                 disabled
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  color: "var(--text-muted)",
+                  cursor: "not-allowed",
+                  opacity: 0.7,
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                }}
               />
             </div>
 
