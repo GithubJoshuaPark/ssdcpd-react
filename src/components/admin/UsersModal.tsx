@@ -6,6 +6,7 @@ import { getAllUserProfiles } from "../../services/firebaseService";
 import type { UserProfile } from "../../types_interfaces/userProfile";
 import { Toast } from "../common/Toast";
 import { ProfileModal } from "../profile/ProfileModal";
+import { SendEmailModal } from "./SendEmailModal";
 
 interface UsersModalProps {
   isOpen: boolean;
@@ -21,6 +22,10 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  // --- Email Selection State ---
+  const [selectedUids, setSelectedUids] = useState<Set<string>>(new Set());
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -45,19 +50,20 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
   // Reset to page 1 when search or itemsPerPage changes
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedUids(new Set()); // 필터 변경 시 선택 초기화 (선택 사항)
   }, [searchTerm, itemsPerPage]);
 
   // ESC 키로 모달 닫기
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen && !selectedUser) {
+      if (e.key === "Escape" && isOpen && !selectedUser && !isEmailModalOpen) {
         onClose();
       }
     };
 
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose, selectedUser]);
+  }, [isOpen, onClose, selectedUser, isEmailModalOpen]);
 
   // 모달이 열릴 때 body 스크롤 방지
   useEffect(() => {
@@ -83,13 +89,12 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
         return (
           user.name?.toLowerCase().includes(term) ||
           false ||
-          user.email.toLowerCase().includes(term) ||
+          user.email?.toLowerCase().includes(term) ||
           user.role?.toLowerCase().includes(term) ||
           false
         );
       })
       .sort((a: UserProfile, b: UserProfile) => {
-        // Sort by creation date descending
         const dateA = new Date(a.created_at || 0).getTime();
         const dateB = new Date(b.created_at || 0).getTime();
         return dateB - dateA;
@@ -101,6 +106,45 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredUsers, currentPage, itemsPerPage]);
+
+  // --- Selection Handlers ---
+  const toggleSelectUser = (uid: string) => {
+    const newSet = new Set(selectedUids);
+    if (newSet.has(uid)) {
+      newSet.delete(uid);
+    } else {
+      newSet.add(uid);
+    }
+    setSelectedUids(newSet);
+  };
+
+  const handleSelectAll = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      // 현재 필터링된 목록의 모든 UID 선택
+      const allUids = filteredUsers.map(u => u.uid);
+      const newSet = new Set(selectedUids);
+      allUids.forEach(uid => newSet.add(uid));
+      setSelectedUids(newSet);
+    } else {
+      // 현재 필터링된 모든 UID 해제 (다른 필터로 선택된 건 유지할지, 전체 해제할지 결정 필요. 여기선 전체 해제로 단순화)
+      // 또는 filteredUsers에 있는 것만 제거:
+      const newSet = new Set(selectedUids);
+      filteredUsers.forEach(u => newSet.delete(u.uid));
+      setSelectedUids(newSet);
+    }
+  };
+
+  // 현재 페이지의 모든 유저가 선택되었는지 확인 (헤더 체크박스용)
+  const isAllSelected =
+    filteredUsers.length > 0 &&
+    paginatedUsers.every(u => selectedUids.has(u.uid)); // 'paginatedUsers' or 'filteredUsers'? -> Table Header usually controls visual items.
+
+  // 선택된 사용자들의 이메일 목록 추출
+  const selectedEmails = useMemo(() => {
+    return users
+      .filter(u => selectedUids.has(u.uid) && u.email)
+      .map(u => u.email);
+  }, [users, selectedUids]);
 
   const handleUserClick = (user: UserProfile) => {
     setSelectedUser(user);
@@ -131,12 +175,13 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
               gap: "10px",
               marginBottom: "20px",
               alignItems: "center",
+              flexWrap: "wrap",
             }}
           >
             <input
               type="text"
               className="auth-input users-search-input"
-              style={{ flex: 1, marginBottom: 0 }}
+              style={{ flex: 1, marginBottom: 0, minWidth: "200px" }}
               placeholder={t("admin.searchPlaceholder")}
               value={searchTerm}
               onChange={handleSearchChange}
@@ -169,6 +214,24 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
                 ))}
               </select>
             </div>
+
+            {/* 이메일 발송 버튼 */}
+            {selectedUids.size > 0 && (
+              <button
+                className="auth-button"
+                style={{
+                  width: "auto",
+                  padding: "6px 15px",
+                  fontSize: "0.9rem",
+                  marginBottom: 0,
+                  backgroundColor: "var(--accent)",
+                  whiteSpace: "nowrap",
+                }}
+                onClick={() => setIsEmailModalOpen(true)}
+              >
+                📧 Send Email ({selectedUids.size})
+              </button>
+            )}
           </div>
 
           {/* 사용자 목록 테이블 */}
@@ -185,6 +248,14 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
                 <table className="users-table desktop-only">
                   <thead>
                     <tr>
+                      <th style={{ width: "40px", textAlign: "center" }}>
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          onChange={handleSelectAll}
+                          style={{ cursor: "pointer" }}
+                        />
+                      </th>
                       <th>{t("admin.table.profile")}</th>
                       <th>{t("admin.table.name")}</th>
                       <th>{t("admin.table.email")}</th>
@@ -195,6 +266,14 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
                   <tbody>
                     {paginatedUsers.map((user: UserProfile) => (
                       <tr key={user.uid}>
+                        <td style={{ textAlign: "center" }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedUids.has(user.uid)}
+                            onChange={() => toggleSelectUser(user.uid)}
+                            style={{ cursor: "pointer" }}
+                          />
+                        </td>
                         <td>
                           <div className="users-avatar">
                             {user.photoURL ? (
@@ -228,17 +307,55 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
 
                 {/* Mobile View: Cards */}
                 <div className="users-mobile-cards mobile-only">
+                  <div
+                    style={{
+                      padding: "10px",
+                      background: "rgba(255,255,255,0.05)",
+                      borderRadius: "8px",
+                      marginBottom: "10px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      onChange={handleSelectAll}
+                      id="mobile-select-all"
+                    />
+                    <label
+                      htmlFor="mobile-select-all"
+                      style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}
+                    >
+                      Select All on Page
+                    </label>
+                  </div>
+
                   {paginatedUsers.map((user: UserProfile) => (
                     <div key={user.uid} className="user-mobile-card">
                       <div className="user-mobile-card-header">
-                        <div className="users-avatar large">
-                          {user.photoURL ? (
-                            <img src={user.photoURL} alt={user.name} />
-                          ) : (
-                            <div className="users-avatar-placeholder">
-                              {user.email.charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedUids.has(user.uid)}
+                            onChange={() => toggleSelectUser(user.uid)}
+                          />
+                          <div className="users-avatar large">
+                            {user.photoURL ? (
+                              <img src={user.photoURL} alt={user.name} />
+                            ) : (
+                              <div className="users-avatar-placeholder">
+                                {user.email.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <span className={`role-badge ${user.role}`}>
                           {user.role}
@@ -334,9 +451,16 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
         onClose={closeProfileModal}
         targetProfile={selectedUser || undefined}
         onUserDeleted={() => {
-          // 사용자 삭제 후 목록 새로고침
           loadUsers();
         }}
+      />
+
+      {/* 이메일 발송 모달 */}
+      <SendEmailModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        targetEmails={selectedEmails}
+        onSendSuccess={() => setSelectedUids(new Set())}
       />
 
       {error && (

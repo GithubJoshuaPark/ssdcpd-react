@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { createPortal } from "react-dom";
 import { FaCircleNotch } from "react-icons/fa";
 
 interface LoadingSpinnerProps {
@@ -8,7 +9,7 @@ interface LoadingSpinnerProps {
 export const LoadingSpinner: FC<LoadingSpinnerProps> = ({
   message = "Processing...",
 }) => {
-  return (
+  return createPortal(
     <div
       style={{
         position: "fixed",
@@ -22,7 +23,7 @@ export const LoadingSpinner: FC<LoadingSpinnerProps> = ({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 9999,
+        zIndex: 99999, // 확실히 최상단 오버레이
         transition: "all 0.3s ease",
       }}
     >
@@ -83,6 +84,7 @@ export const LoadingSpinner: FC<LoadingSpinnerProps> = ({
           to { transform: scale(1.2); opacity: 0.4; }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 };
