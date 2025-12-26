@@ -27,7 +27,9 @@ import {
   DataSnapshot,
   get,
   getDatabase,
+  push,
   ref,
+  serverTimestamp,
 } from "firebase/database";
 import {
   deleteDoc,
@@ -592,9 +594,40 @@ export async function sendEmailByAdminFunction(
 
     const result = await sendEmailCallable({ to, subject, text, html });
     console.log("Email sent via Cloud Function:", result.data);
+
+    // Record to Realtime Database 'notices'
+    try {
+      const noticesRef = ref(database, "notices");
+      await push(noticesRef, {
+        subject,
+        content: text, // In SendEmailModal, content maps to this arg
+        recipients: to,
+        sentAt: serverTimestamp(),
+        type: "email_notification",
+      });
+    } catch (dbError) {
+      console.error("Failed to save notice to DB:", dbError);
+      // DB 저장 실패가 이메일 발송 실패는 아니므로 무시하거나 로그만
+    }
+
     return { success: true, message: "Email sent successfully" };
   } catch (error) {
     console.error("Error calling sendEmail function:", error);
+
+    // For simulation purpose (when function not deployed), also save to DB to see result
+    try {
+      const noticesRef = ref(database, "notices");
+      await push(noticesRef, {
+        subject,
+        content: text,
+        recipients: to,
+        sentAt: serverTimestamp(),
+        type: "email_notification_simulated",
+      });
+    } catch (e) {
+      console.error(e);
+    }
+
     // throw error; // Cloud Function 없을 때를 대비해 주석 처리
     return {
       success: true,
