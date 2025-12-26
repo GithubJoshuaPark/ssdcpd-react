@@ -150,9 +150,10 @@ export const NoticesModal: FC<NoticesModalProps> = ({
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "20px",
+            flexDirection: "row",
             gap: "10px",
+            marginBottom: "20px",
+            alignItems: "center",
             flexWrap: "wrap",
           }}
         >
@@ -178,7 +179,12 @@ export const NoticesModal: FC<NoticesModalProps> = ({
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              style={{ width: "auto", marginBottom: 0, padding: "8px" }}
+              style={{
+                width: "70px",
+                marginBottom: 0,
+                padding: "6px 8px",
+                cursor: "pointer",
+              }}
             >
               <option value={5}>5</option>
               <option value={10}>10</option>

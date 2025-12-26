@@ -158,7 +158,7 @@ export const TracksModal: FC<TracksModalProps> = ({ isOpen, onClose }) => {
             style={{
               display: "flex",
               flexDirection: "row",
-              gap: "12px",
+              gap: "10px", // Increased gap
               alignItems: "center",
               marginBottom: "20px",
               flexWrap: "wrap",
@@ -167,7 +167,7 @@ export const TracksModal: FC<TracksModalProps> = ({ isOpen, onClose }) => {
             <input
               type="text"
               className="auth-input tracks-search-input"
-              style={{ flex: 1, marginBottom: 0 }}
+              style={{ flex: 1, marginBottom: 0, minWidth: "200px" }} // Added minWidth
               placeholder="Search by title, category, or tags..."
               value={searchTerm}
               onChange={handleSearchChange}
@@ -203,7 +203,7 @@ export const TracksModal: FC<TracksModalProps> = ({ isOpen, onClose }) => {
             <button
               className="auth-button"
               onClick={handleAddNew}
-              style={{ marginBottom: 0 }}
+              style={{ marginBottom: 0, whiteSpace: "nowrap" }} // Prevent wrapping in button
             >
               + Add New Track
             </button>

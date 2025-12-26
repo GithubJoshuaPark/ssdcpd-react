@@ -200,6 +200,7 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
             flexDirection: "row",
             gap: "10px",
             alignItems: "center",
+            flexWrap: "wrap",
           }}
         >
           <input
@@ -208,7 +209,7 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="auth-input"
-            style={{ flex: 1, marginBottom: 0 }}
+            style={{ flex: 1, marginBottom: 0, minWidth: "200px" }}
           />
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span

@@ -670,8 +670,9 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                 marginBottom: "16px",
                 display: "flex",
                 flexDirection: "row",
-                gap: "8px",
+                gap: "10px",
                 alignItems: "center",
+                flexWrap: "wrap",
               }}
             >
               <input
@@ -680,14 +681,14 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className="auth-input"
-                style={{ flex: 1, marginBottom: 0 }}
+                style={{ flex: 1, marginBottom: 0, minWidth: "200px" }}
               />
               <div
-                style={{ display: "flex", alignItems: "center", gap: "4px" }}
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
               >
                 <span
                   style={{
-                    fontSize: "0.75rem",
+                    fontSize: "0.85rem", // Consistent with UsersModal and others
                     color: "var(--text-muted)",
                     whiteSpace: "nowrap",
                   }}
@@ -700,7 +701,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                   className="auth-input"
                   style={{
                     width: "70px",
-                    padding: "4px 8px",
+                    padding: "6px 8px", // Adjusted padding for better look
                     marginBottom: 0,
                     cursor: "pointer",
                   }}
