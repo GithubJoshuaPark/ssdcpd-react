@@ -148,6 +148,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
           }
           verifierRef.current = null;
         } catch (e) {
+          console.error("Verifier cleanup error:", e);
           // Ignore clear errors (often caused by DOM element already removed)
         }
       }
@@ -435,6 +436,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
         try {
           verifierRef.current.clear();
         } catch (e) {
+          console.error("Verifier clear error:", e);
           // ignore
         }
         verifierRef.current = null;
