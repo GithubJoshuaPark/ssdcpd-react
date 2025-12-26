@@ -174,7 +174,8 @@ export const LoginForm: FC<LoginFormProps> = ({
           id="login-recaptcha-container"
           style={{
             marginTop: "15px",
-            display: "flex",
+            // 문자가 발송(verificationId 존재)되면 위젯을 숨김
+            display: verificationId ? "none" : "flex",
             justifyContent: "center",
           }}
         ></div>
