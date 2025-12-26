@@ -6,6 +6,7 @@ import { useAuth } from "../../auth/useAuth";
 import { useI18n } from "../../i18n/useI18n";
 import { database } from "../../services/firebaseService";
 import type { Contact } from "../../types_interfaces/contact";
+import type { Notice } from "../../types_interfaces/notice";
 import { ContactsModal } from "../admin/ContactsModal";
 import { NoticesModal } from "../admin/NoticesModal";
 import { ProjectsModal } from "../admin/ProjectsModal";
@@ -32,6 +33,7 @@ export const Header: FC = () => {
   const [isCpdDropdownOpen, setIsCpdDropdownOpen] = useState(false);
   const [isHomeDropdownOpen, setIsHomeDropdownOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [noticeCount, setNoticeCount] = useState(0);
 
   const adminDropdownRef = useRef<HTMLDivElement>(null);
   const cpdDropdownRef = useRef<HTMLDivElement>(null);
@@ -184,6 +186,52 @@ export const Header: FC = () => {
       setTimeout(() => setPendingCount(0), 0);
     }
   }, [userProfile?.role]);
+
+  // Listen to unread notices for the current user (last 2 days)
+  useEffect(() => {
+    if (!currentUser?.email) {
+      // If no user, we naturally stop listening.
+      // We can also reset count if we want to be safe, but doing it synchronously inside useEffect triggers warnings.
+      // Since 'currentUser' changes will re-trigger this effect, let's just use a timeout or assume 0 init.
+      // Actually, if we just return, the previous subscription cleans up, and if we want 0, we can wrap in setTimeout or use a separate logic.
+      // But simpler: just initialize count to 0 in the 'else' of snapshot or depend on 'currentUser' change to reset?
+      // Let's just avoid the explicit set here if it's already 0 or handled by unmount.
+      return;
+    }
+
+    const noticesRef = ref(database, "notices");
+    const unsubscribe = onValue(noticesRef, snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const now = Date.now();
+        const twoDaysAgo = now - 2 * 24 * 60 * 60 * 1000;
+        const userEmail = currentUser.email!;
+
+        const count = Object.values(data as Record<string, Notice>).filter(
+          n => {
+            if (!n || typeof n !== "object") return false;
+            // Check time
+            if (n.sentAt < twoDaysAgo) return false;
+
+            // Check recipient
+            const recipients = n.recipients;
+            if (Array.isArray(recipients)) {
+              return recipients.includes(userEmail);
+            } else if (typeof recipients === "string") {
+              return recipients === userEmail;
+            }
+            return false;
+          }
+        ).length;
+
+        setNoticeCount(count);
+      } else {
+        setNoticeCount(0);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentUser?.email]);
 
   return (
     <>
@@ -383,8 +431,28 @@ export const Header: FC = () => {
                 role="button"
                 tabIndex={0}
                 onKeyDown={e => e.key === "Enter" && handleProfileClick()}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  whiteSpace: "nowrap",
+                }}
               >
                 {userProfile?.name || currentUser.email?.split("@")[0]}
+                {noticeCount > 0 && (
+                  <span
+                    className="notification-badge"
+                    style={{
+                      marginLeft: "8px",
+                      backgroundColor: "var(--accent)", // Use accent color or red
+                      color: "#fff",
+                      fontSize: "0.75rem",
+                      padding: "2px 6px",
+                      borderRadius: "10px",
+                    }}
+                  >
+                    {noticeCount}
+                  </span>
+                )}
               </span>
               <button onClick={handleLogout} className="auth-nav-button">
                 {t("auth.logout")}

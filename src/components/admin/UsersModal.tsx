@@ -164,7 +164,24 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
             ✕
           </button>
 
-          <h2 className="users-modal-title">{t("admin.usersTitle")}</h2>
+          <h2
+            className="users-modal-title"
+            style={{ display: "flex", alignItems: "center", gap: "10px" }}
+          >
+            {t("admin.usersTitle")}
+            <span
+              className="notification-badge"
+              style={{
+                backgroundColor: "var(--accent)",
+                color: "#fff",
+                fontSize: "1rem",
+                padding: "2px 10px",
+                borderRadius: "12px",
+              }}
+            >
+              {filteredUsers.length}
+            </span>
+          </h2>
 
           {/* 검색 필터 및 페이지 설정 */}
           <div

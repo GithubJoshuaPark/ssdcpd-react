@@ -1,8 +1,11 @@
 // src/components/profile/ProfileModal.tsx
+import { onValue, ref } from "firebase/database";
 import type { ChangeEvent, FC, FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { useI18n } from "../../i18n/useI18n";
+import { database } from "../../services/firebaseService";
+import type { Notice } from "../../types_interfaces/notice";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { CustomPrompt } from "../common/CustomPrompt";
 import { LoadingSpinner } from "../common/LoadingSpinner";
@@ -66,6 +69,8 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   const [mfaVerificationId, setMfaVerificationId] = useState("");
   const [mfaStep, setMfaStep] = useState<"idle" | "verifying">("idle");
   const [mfaSendingCode, setMfaSendingCode] = useState(false);
+
+  const [noticeCount, setNoticeCount] = useState(0);
 
   const enrolledFactors = currentUser
     ? multiFactor(currentUser).enrolledFactors
@@ -154,6 +159,43 @@ export const ProfileModal: FC<ProfileModalProps> = ({
       }
     };
   }, []);
+
+  // Listen to unread notices (same logic as Header)
+  useEffect(() => {
+    // Only fetch for current user's own profile view
+    if (isReadOnly || !currentUser?.email) return;
+
+    const noticesRef = ref(database, "notices");
+    const unsubscribe = onValue(noticesRef, snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const now = Date.now();
+        const twoDaysAgo = now - 2 * 24 * 60 * 60 * 1000;
+        const userEmail = currentUser.email!;
+
+        const count = Object.values(data as Record<string, Notice>).filter(
+          n => {
+            if (!n || typeof n !== "object") return false;
+            if (n.sentAt < twoDaysAgo) return false;
+
+            const recipients = n.recipients;
+            if (Array.isArray(recipients)) {
+              return recipients.includes(userEmail);
+            } else if (typeof recipients === "string") {
+              return recipients === userEmail;
+            }
+            return false;
+          }
+        ).length;
+
+        setNoticeCount(count);
+      } else {
+        setNoticeCount(0);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentUser?.email, isReadOnly]);
 
   if (!isOpen) return null;
 
@@ -465,8 +507,25 @@ export const ProfileModal: FC<ProfileModalProps> = ({
             ✕
           </button>
 
-          <h2 className="profile-modal-title">
+          <h2
+            className="profile-modal-title"
+            style={{ display: "flex", alignItems: "center", gap: "10px" }}
+          >
             {isReadOnly ? "User Profile" : t("profile.title")}
+            {!isReadOnly && noticeCount >= 1 && (
+              <span
+                className="notification-badge"
+                style={{
+                  backgroundColor: "var(--accent)",
+                  color: "#fff",
+                  fontSize: "1rem",
+                  padding: "2px 10px",
+                  borderRadius: "12px",
+                }}
+              >
+                {noticeCount}
+              </span>
+            )}
           </h2>
 
           <form className="profile-form" onSubmit={handleSubmit}>

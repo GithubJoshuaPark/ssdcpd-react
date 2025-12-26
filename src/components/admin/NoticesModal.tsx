@@ -3,16 +3,8 @@ import type { FC } from "react";
 import { Fragment, useEffect, useState } from "react";
 import { useI18n } from "../../i18n/useI18n";
 import { database } from "../../services/firebaseService";
+import type { Notice } from "../../types_interfaces/notice";
 import { ConfirmDialog } from "../common/ConfirmDialog";
-
-interface Notice {
-  id: string;
-  subject: string;
-  content: string;
-  recipients: string | string[];
-  sentAt: number;
-  type?: string;
-}
 
 interface NoticesModalProps {
   isOpen: boolean;
