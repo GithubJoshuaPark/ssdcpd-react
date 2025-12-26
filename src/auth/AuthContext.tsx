@@ -26,8 +26,8 @@ export interface AuthContextType {
   deleteAccount: () => Promise<void>;
   sendMfaEnrollmentCode: (
     phoneNumber: string,
-    containerId: string
-  ) => Promise<{ verificationId: string; verifier: RecaptchaVerifier }>;
+    verifier: RecaptchaVerifier
+  ) => Promise<string>;
   finalizeMfaEnrollment: (
     verificationId: string,
     verificationCode: string

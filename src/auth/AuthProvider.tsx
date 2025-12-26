@@ -1,5 +1,5 @@
 // src/auth/AuthProvider.tsx
-import type { MultiFactorResolver } from "firebase/auth";
+import type { MultiFactorResolver, RecaptchaVerifier } from "firebase/auth";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -137,14 +137,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
   const sendMfaEnrollmentCode = async (
     phoneNumber: string,
-    containerId: string
+    verifier: RecaptchaVerifier
   ) => {
-    const recaptchaVerifier = getRecaptchaVerifier(containerId);
     const verificationId = await firebaseSendMfaEnrollmentCode(
       phoneNumber,
-      recaptchaVerifier
+      verifier
     );
-    return { verificationId, verifier: recaptchaVerifier };
+    return verificationId;
   };
 
   const finalizeMfaEnrollment = async (

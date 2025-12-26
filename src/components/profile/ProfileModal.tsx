@@ -1,6 +1,6 @@
 // src/components/profile/ProfileModal.tsx
 import type { ChangeEvent, FC, FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { useI18n } from "../../i18n/useI18n";
 import { ConfirmDialog } from "../common/ConfirmDialog";
@@ -58,7 +58,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   const [showMfaDisableConfirm, setShowMfaDisableConfirm] = useState(false);
   const [currentPasswordTemp, setCurrentPasswordTemp] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [verifier, setVerifier] = useState<RecaptchaVerifier | null>(null); // 리캡차 인스턴스 저장을 위한 상태
+  const verifierRef = useRef<RecaptchaVerifier | null>(null); // 리캡차 인스턴스 저장을 위한 상태 (Ref로 변경)
 
   // --- MFA States ---
   const [mfaPhoneNumber, setMfaPhoneNumber] = useState("");
@@ -133,18 +133,53 @@ export const ProfileModal: FC<ProfileModalProps> = ({
     };
   }, [isOpen]);
 
-  // 리캡차 인스턴스 정리
+  // 리캡차 인스턴스 초기화 및 관리
   useEffect(() => {
-    return () => {
-      if (verifier) {
-        try {
-          verifier.clear();
-        } catch (e) {
-          console.error("Verifier cleanup error:", e);
+    let isMounted = true;
+
+    const initVerifier = async () => {
+      // MFA가 활성화되어 있지 않고, idle 상태이며, 아직 verifier가 없을 때
+      if (!isMfaEnabled && mfaStep === "idle" && !verifierRef.current) {
+        const container = document.getElementById("recaptcha-container");
+        if (container) {
+          try {
+            const { getRecaptchaVerifier } = await import(
+              "../../services/firebaseService"
+            );
+
+            if (isMounted && !verifierRef.current) {
+              // 명시적으로 렌더링 호출하여 위젯 표시
+              const verifier = getRecaptchaVerifier("recaptcha-container");
+              verifierRef.current = verifier;
+              await verifier.render();
+            }
+          } catch (e) {
+            console.error("Recaptcha init error:", e);
+          }
         }
       }
     };
-  }, [verifier]);
+
+    initVerifier();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (verifierRef.current) {
+        try {
+          // Check if container still exists before clearing to avoid DOM errors
+          const container = document.getElementById("recaptcha-container");
+          if (container) {
+            verifierRef.current.clear();
+          }
+          verifierRef.current = null;
+        } catch (e) {
+          console.error("Verifier cleanup error:", e);
+          // Ignore clear errors (often caused by DOM element already removed)
+        }
+      }
+    };
+  }, [isMfaEnabled, mfaStep]);
 
   if (!isOpen) return null;
 
@@ -312,20 +347,38 @@ export const ProfileModal: FC<ProfileModalProps> = ({
     setLoading(true);
 
     try {
-      // 기존 인스턴스 있으면 정리
-      if (verifier) {
+      // verifier가 초기화되지 않았다면 초기화 및 렌더링 시도 후 중단 (사용자 입력 필요)
+      if (!verifierRef.current) {
         try {
-          verifier.clear();
+          const { getRecaptchaVerifier } = await import(
+            "../../services/firebaseService"
+          );
+          const verifier = getRecaptchaVerifier("recaptcha-container");
+          verifierRef.current = verifier;
+          await verifier.render();
+
+          setToast({
+            message: "Please check the box to verify you are not a robot.",
+            type: "info",
+          });
         } catch (e) {
-          console.error("Clear error:", e);
+          console.error("Recaptcha manual init error:", e);
+          setToast({
+            message: "Failed to load Recaptcha. Please refresh.",
+            type: "error",
+          });
+          setMfaSendingCode(false);
+          setLoading(false);
+          return;
         }
       }
 
-      const { verificationId, verifier: vInstance } =
-        await sendMfaEnrollmentCode(mfaPhoneNumber, "recaptcha-container");
+      const verificationId = await sendMfaEnrollmentCode(
+        mfaPhoneNumber,
+        verifierRef.current
+      );
 
       setMfaVerificationId(verificationId);
-      setVerifier(vInstance);
       setMfaStep("verifying");
       setToast({ message: "Verification code sent!", type: "success" });
     } catch (error: unknown) {
@@ -340,9 +393,19 @@ export const ProfileModal: FC<ProfileModalProps> = ({
         });
       } else if (firebaseError.code === "auth/invalid-recaptcha-token") {
         setToast({
-          message: "ReCAPTCHA token error. Please refresh and try again.",
+          message: "ReCAPTCHA token error. Reloading...",
           type: "error",
         });
+        // 토큰 에러 시 verifier 초기화하여 재생성 유도
+        if (verifierRef.current) {
+          try {
+            verifierRef.current.clear();
+          } catch (e) {
+            // Ignore clear error
+            console.warn(e);
+          }
+          verifierRef.current = null;
+        }
       } else if (firebaseError.code === "auth/requires-recent-login") {
         setToast({
           message:
