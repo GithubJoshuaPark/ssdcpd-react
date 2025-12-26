@@ -3,6 +3,7 @@ import type { FC, FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { useI18n } from "../../i18n/useI18n";
+import { Toast } from "../common/Toast";
 
 interface LoginFormProps {
   onSwitchToSignup: () => void;
@@ -30,6 +31,12 @@ export const LoginForm: FC<LoginFormProps> = ({
   const [verificationId, setVerificationId] = useState("");
   const [isMfaStep, setIsMfaStep] = useState(false);
 
+  // --- Toast State ---
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
+
   // --- MFA 코드 자동 발송 (isMfaStep 전환 후 컨테이너가 DOM에 나타난 뒤 실행) ---
   useEffect(() => {
     const triggerMfaCode = async () => {
@@ -43,6 +50,11 @@ export const LoginForm: FC<LoginFormProps> = ({
           );
           setVerificationId(vId);
           console.log("MFA Sign-in code sent.");
+          setToast({
+            message:
+              "등록된 전화번호로 전송된 6자리 코드를 입력 후 로그인 하세요.",
+            type: "success",
+          });
         } catch (mfaError) {
           console.error("MFA Send Error:", mfaError);
           onError("Failed to send verification code.");
@@ -166,6 +178,13 @@ export const LoginForm: FC<LoginFormProps> = ({
             justifyContent: "center",
           }}
         ></div>
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
       </form>
     );
   }
@@ -224,6 +243,14 @@ export const LoginForm: FC<LoginFormProps> = ({
           </button>
         </p>
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </form>
   );
 };
