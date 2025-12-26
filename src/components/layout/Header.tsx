@@ -7,6 +7,7 @@ import { useI18n } from "../../i18n/useI18n";
 import { database } from "../../services/firebaseService";
 import type { Contact } from "../../types_interfaces/contact";
 import { ContactsModal } from "../admin/ContactsModal";
+import { NoticesModal } from "../admin/NoticesModal";
 import { ProjectsModal } from "../admin/ProjectsModal";
 import { TracksModal } from "../admin/TracksModal";
 import { UsersModal } from "../admin/UsersModal";
@@ -25,6 +26,7 @@ export const Header: FC = () => {
   const [isTracksModalOpen, setIsTracksModalOpen] = useState(false);
   const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
+  const [isNoticesModalOpen, setIsNoticesModalOpen] = useState(false);
   const [showLogoutToast, setShowLogoutToast] = useState(false);
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const [isCpdDropdownOpen, setIsCpdDropdownOpen] = useState(false);
@@ -88,6 +90,12 @@ export const Header: FC = () => {
 
   const handleProjectsClick = () => {
     setIsProjectsModalOpen(true);
+    setIsMenuOpen(false);
+    setIsAdminDropdownOpen(false);
+  };
+
+  const handleNoticesClick = () => {
+    setIsNoticesModalOpen(true);
     setIsMenuOpen(false);
     setIsAdminDropdownOpen(false);
   };
@@ -352,6 +360,12 @@ export const Header: FC = () => {
                   </button>
                   <button
                     className="admin-dropdown-item"
+                    onClick={handleNoticesClick}
+                  >
+                    📢 Notices
+                  </button>
+                  <button
+                    className="admin-dropdown-item"
                     onClick={handleProjectsClick}
                   >
                     🚀 Projects
@@ -416,6 +430,11 @@ export const Header: FC = () => {
       <ProjectsModal
         isOpen={isProjectsModalOpen}
         onClose={() => setIsProjectsModalOpen(false)}
+      />
+
+      <NoticesModal
+        isOpen={isNoticesModalOpen}
+        onClose={() => setIsNoticesModalOpen(false)}
       />
 
       {showLogoutToast && (
