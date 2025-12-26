@@ -1,5 +1,10 @@
 // src/auth/AuthContext.tsx
-import type { MultiFactorResolver, User, UserCredential } from "firebase/auth";
+import type {
+  MultiFactorResolver,
+  RecaptchaVerifier,
+  User,
+  UserCredential,
+} from "firebase/auth";
 import { createContext } from "react";
 import type { UserProfile } from "../types_interfaces/userProfile";
 
@@ -22,7 +27,7 @@ export interface AuthContextType {
   sendMfaEnrollmentCode: (
     phoneNumber: string,
     containerId: string
-  ) => Promise<string>;
+  ) => Promise<{ verificationId: string; verifier: RecaptchaVerifier }>;
   finalizeMfaEnrollment: (
     verificationId: string,
     verificationCode: string

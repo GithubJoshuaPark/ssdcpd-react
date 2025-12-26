@@ -140,7 +140,11 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     containerId: string
   ) => {
     const recaptchaVerifier = getRecaptchaVerifier(containerId);
-    return await firebaseSendMfaEnrollmentCode(phoneNumber, recaptchaVerifier);
+    const verificationId = await firebaseSendMfaEnrollmentCode(
+      phoneNumber,
+      recaptchaVerifier
+    );
+    return { verificationId, verifier: recaptchaVerifier };
   };
 
   const finalizeMfaEnrollment = async (

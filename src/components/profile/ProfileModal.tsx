@@ -9,7 +9,11 @@ import { LoadingSpinner } from "../common/LoadingSpinner";
 import { RichEditor } from "../common/RichEditor";
 import { Toast, type ToastType } from "../common/Toast";
 
-import { multiFactor, type PhoneMultiFactorInfo } from "firebase/auth";
+import {
+  multiFactor,
+  type PhoneMultiFactorInfo,
+  type RecaptchaVerifier,
+} from "firebase/auth";
 import type { UserProfile } from "../../types_interfaces/userProfile";
 
 interface ProfileModalProps {
@@ -54,6 +58,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   const [showMfaDisableConfirm, setShowMfaDisableConfirm] = useState(false);
   const [currentPasswordTemp, setCurrentPasswordTemp] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [verifier, setVerifier] = useState<RecaptchaVerifier | null>(null); // 리캡차 인스턴스 저장을 위한 상태
 
   // --- MFA States ---
   const [mfaPhoneNumber, setMfaPhoneNumber] = useState("");
@@ -127,6 +132,19 @@ export const ProfileModal: FC<ProfileModalProps> = ({
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+
+  // 리캡차 인스턴스 정리
+  useEffect(() => {
+    return () => {
+      if (verifier) {
+        try {
+          verifier.clear();
+        } catch (e) {
+          console.error("Verifier cleanup error:", e);
+        }
+      }
+    };
+  }, [verifier]);
 
   if (!isOpen) return null;
 
@@ -291,22 +309,56 @@ export const ProfileModal: FC<ProfileModalProps> = ({
     }
 
     setMfaSendingCode(true);
+    setLoading(true);
+
     try {
-      const vId = await sendMfaEnrollmentCode(
-        mfaPhoneNumber,
-        "recaptcha-container"
-      );
-      setMfaVerificationId(vId);
+      // 기존 인스턴스 있으면 정리
+      if (verifier) {
+        try {
+          verifier.clear();
+        } catch (e) {
+          console.error("Clear error:", e);
+        }
+      }
+
+      const { verificationId, verifier: vInstance } =
+        await sendMfaEnrollmentCode(mfaPhoneNumber, "recaptcha-container");
+
+      setMfaVerificationId(verificationId);
+      setVerifier(vInstance);
       setMfaStep("verifying");
       setToast({ message: "Verification code sent!", type: "success" });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("MFA Send error:", error);
-      setToast({
-        message: "Failed to send code. Check number format.",
-        type: "error",
-      });
+      const firebaseError = error as { code?: string };
+
+      if (firebaseError.code === "auth/invalid-app-credential") {
+        setToast({
+          message:
+            "Auth domain error. Check Firebase Console authorized domains.",
+          type: "error",
+        });
+      } else if (firebaseError.code === "auth/invalid-recaptcha-token") {
+        setToast({
+          message: "ReCAPTCHA token error. Please refresh and try again.",
+          type: "error",
+        });
+      } else if (firebaseError.code === "auth/requires-recent-login") {
+        setToast({
+          message:
+            t("auth.requiresRecentLogin") ||
+            "Please sign in again to enable 2FA for security.",
+          type: "error",
+        });
+      } else {
+        setToast({
+          message: "Failed to send code. Check number format.",
+          type: "error",
+        });
+      }
     } finally {
       setMfaSendingCode(false);
+      setLoading(false);
     }
   };
 
@@ -545,6 +597,14 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                               : t("profile.sendCode") || "Send Code"}
                           </button>
                         </div>
+                        <div
+                          id="recaptcha-container"
+                          style={{
+                            marginTop: "15px",
+                            display: "flex",
+                            justifyContent: "center",
+                          }}
+                        ></div>
                       </div>
                     ) : (
                       <div
@@ -599,14 +659,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                     )}
                   </>
                 )}
-                <div
-                  id="recaptcha-container"
-                  style={{
-                    marginTop: "15px",
-                    display: isMfaEnabled ? "none" : "flex",
-                    justifyContent: "center",
-                  }}
-                ></div>
+                {/* Removed duplicate recaptcha-container */}
               </div>
             )}
 
