@@ -319,15 +319,13 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
                       <h4 style={{ margin: "0 0 5px 0", fontSize: "1rem" }}>
                         {c.subject}
                       </h4>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: "0.9rem",
-                          whiteSpace: "pre-wrap",
-                        }}
-                      >
-                        {c.message}
-                      </p>
+                      <div style={{ marginTop: "8px" }}>
+                        <RichEditor
+                          value={c.message}
+                          readOnly={true}
+                          minHeight="auto"
+                        />
+                      </div>
                     </div>
 
                     <div

@@ -186,7 +186,9 @@ export const ContactModal: FC<ContactModalProps> = ({ isOpen, onClose }) => {
           <div className="contact-form-side">
             <form onSubmit={handleSubmit} className="auth-form">
               <div className="auth-form-group">
-                <label>Name</label>
+                <label style={{ textAlign: "left", display: "block" }}>
+                  Name
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -197,18 +199,29 @@ export const ContactModal: FC<ContactModalProps> = ({ isOpen, onClose }) => {
                 />
               </div>
               <div className="auth-form-group">
-                <label>Email</label>
+                <label style={{ textAlign: "left", display: "block" }}>
+                  Email
+                </label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
-                  onChange={handleChange}
+                  readOnly
+                  disabled
                   className="auth-input"
-                  required
+                  style={{
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    color: "var(--text-muted)",
+                    cursor: "not-allowed",
+                    opacity: 0.7,
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                  }}
                 />
               </div>
               <div className="auth-form-group">
-                <label>Subject</label>
+                <label style={{ textAlign: "left", display: "block" }}>
+                  Subject
+                </label>
                 <input
                   type="text"
                   name="subject"
@@ -219,14 +232,16 @@ export const ContactModal: FC<ContactModalProps> = ({ isOpen, onClose }) => {
                 />
               </div>
               <div className="auth-form-group">
-                <label>Message</label>
-                <textarea
-                  name="message"
+                <label style={{ textAlign: "left", display: "block" }}>
+                  Message
+                </label>
+                <RichEditor
                   value={formData.message}
-                  onChange={handleChange}
-                  className="auth-input"
-                  style={{ minHeight: "120px" }}
-                  required
+                  onChange={val =>
+                    setFormData(prev => ({ ...prev, message: val }))
+                  }
+                  placeholder="Type your message here..."
+                  minHeight="120px"
                 />
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
@@ -338,15 +353,13 @@ export const ContactModal: FC<ContactModalProps> = ({ isOpen, onClose }) => {
                         </button>
                       </div>
                     </div>
-                    <p
-                      style={{
-                        fontSize: "0.85rem",
-                        color: "var(--text-muted)",
-                        marginTop: "8px",
-                      }}
-                    >
-                      {c.message}
-                    </p>
+                    <div style={{ marginTop: "8px" }}>
+                      <RichEditor
+                        value={c.message}
+                        readOnly={true}
+                        minHeight="auto"
+                      />
+                    </div>
                     <span
                       style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}
                     >
