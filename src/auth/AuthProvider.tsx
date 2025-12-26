@@ -1,6 +1,6 @@
 // src/auth/AuthProvider.tsx
 import type { MultiFactorResolver, RecaptchaVerifier } from "firebase/auth";
-import { onAuthStateChanged, type User } from "firebase/auth";
+import { multiFactor, onAuthStateChanged, type User } from "firebase/auth";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import {
@@ -58,6 +58,28 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
     return unsubscribe;
   }, []);
+
+  // Recaptcha 배지 가시성 제어 (로그인 시 보임, 로그아웃 시 숨김)
+  useEffect(() => {
+    const updateBadgeVisibility = () => {
+      const badge = document.querySelector(".grecaptcha-badge") as HTMLElement;
+      if (badge) {
+        // 배지는 MFA가 설정된 사용자가 로그인했을 때만 표시
+        const isMfaEnabled =
+          currentUser && multiFactor(currentUser).enrolledFactors.length > 0;
+        badge.style.visibility = isMfaEnabled ? "visible" : "hidden";
+      }
+    };
+
+    // DOM 변경 감지 (배지가 나중에 로드될 수 있음)
+    const observer = new MutationObserver(updateBadgeVisibility);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // 초기 실행
+    updateBadgeVisibility();
+
+    return () => observer.disconnect();
+  }, [currentUser]);
 
   const signup = async (email: string, password: string, name?: string) => {
     await signupWithEmail(email, password, name);

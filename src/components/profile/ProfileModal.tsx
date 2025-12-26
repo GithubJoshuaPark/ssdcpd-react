@@ -133,38 +133,12 @@ export const ProfileModal: FC<ProfileModalProps> = ({
     };
   }, [isOpen]);
 
-  // 리캡차 인스턴스 초기화 및 관리
+  // 리캡차 인스턴스 관리 (Cleanup only)
   useEffect(() => {
-    let isMounted = true;
+    // 자동 초기화 로직 제거 (사용자 요청: disableMfa 시 위젯 숨김)
+    // 필요 시 handleSendMfaCode 에서 on-demand로 생성됨.
 
-    const initVerifier = async () => {
-      // MFA가 활성화되어 있지 않고, idle 상태이며, 아직 verifier가 없을 때
-      if (!isMfaEnabled && mfaStep === "idle" && !verifierRef.current) {
-        const container = document.getElementById("recaptcha-container");
-        if (container) {
-          try {
-            const { getRecaptchaVerifier } = await import(
-              "../../services/firebaseService"
-            );
-
-            if (isMounted && !verifierRef.current) {
-              // 명시적으로 렌더링 호출하여 위젯 표시
-              const verifier = getRecaptchaVerifier("recaptcha-container");
-              verifierRef.current = verifier;
-              await verifier.render();
-            }
-          } catch (e) {
-            console.error("Recaptcha init error:", e);
-          }
-        }
-      }
-    };
-
-    initVerifier();
-
-    // Cleanup function
     return () => {
-      isMounted = false;
       if (verifierRef.current) {
         try {
           // Check if container still exists before clearing to avoid DOM errors
@@ -174,12 +148,11 @@ export const ProfileModal: FC<ProfileModalProps> = ({
           }
           verifierRef.current = null;
         } catch (e) {
-          console.error("Verifier cleanup error:", e);
           // Ignore clear errors (often caused by DOM element already removed)
         }
       }
     };
-  }, [isMfaEnabled, mfaStep]);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -457,6 +430,16 @@ export const ProfileModal: FC<ProfileModalProps> = ({
 
     setProcessing(true);
     try {
+      // 기존 리캡차 정리 (해제 후 깔끔한 상태 유지)
+      if (verifierRef.current) {
+        try {
+          verifierRef.current.clear();
+        } catch (e) {
+          // ignore
+        }
+        verifierRef.current = null;
+      }
+
       const factorId = enrolledFactors[0].uid;
       await disableMfa(factorId);
       setToast({ message: "2FA Disabled successfully", type: "success" });
@@ -640,7 +623,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                             value={mfaPhoneNumber}
                             onChange={e => setMfaPhoneNumber(e.target.value)}
                             disabled={mfaSendingCode}
-                            style={{ flex: 1 }}
+                            style={{ flex: 7, minWidth: 0 }}
                           />
                           <button
                             type="button"
@@ -648,11 +631,14 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                             onClick={handleSendMfaCode}
                             disabled={mfaSendingCode}
                             style={{
-                              padding: "0 20px",
+                              flex: 3,
+                              padding: "0 5px",
                               width: "auto",
                               margin: 0,
                               fontSize: "0.85rem",
                               whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
                             }}
                           >
                             {mfaSendingCode
