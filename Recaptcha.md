@@ -1,58 +1,203 @@
-# MFA Enrollment Flow with Recaptcha
+# Firebase Authentication with reCAPTCHA Enterprise Guide
 
-이 다이어그램은 `ProfileModal.tsx`에서 구현된 전화번호 기반의 2단계 인증(MFA) 등록 및 Recaptcha 검증 과정을 보여줍니다.
+This document serves as a comprehensive guide for developers implementing **reCAPTCHA Enterprise** with Firebase Authentication (MFA). It reflects the current implementation in the **SSDCPD** project.
+
+## 1. Overview
+
+Firebase Authentication uses **reCAPTCHA Enterprise** (SMS Defense) to protect against SMS pumping attacks and abuse.
+
+- **Enrollment (Profile)**: Uses a **Visible (Checkbox)** reCAPTCHA widget. The user must explicitly verify they are human before an SMS is sent.
+- **Sign-In (Login)**: Uses an **Invisible** reCAPTCHA (or v3) in the background. A reCAPTCHA badge appears to indicate protection.
+
+---
+
+## 2. Prerequisites & Configuration
+
+Before coding, ensure the environment is set up correctly.
+
+### Firebase Console
+
+1.  **Authentication > Sign-in method > Phone**: Enable Phone authentication.
+2.  **Authentication > Settings > SMS Region Policy**: Whitelist target countries (e.g., South Korea +82) to prevent cost leakage.
+3.  **Authentication > Settings > reCAPTCHA**:
+    - **Phone Auth Enforcement**: `AUDIT` (recommended for dev) or `ENFORCE`.
+    - **SMS Risk Score**: Default `1` (Pass all) for testing, lower for strict production security.
+
+### Google Cloud Console (Critical)
+
+1.  **APIs & Services > Credentials**:
+    - Locate the **Browser key** (auto-created by Firebase).
+    - **Application Restrictions**: Add your domains (`localhost`, `127.0.0.1`, `your-app.web.app`).
+    - **API Restrictions**: If restricted, **MUST** include:
+      - `Identity Toolkit API`
+      - `reCAPTCHA Enterprise API`
+      - `Token Service API`
+
+---
+
+## 3. Implementation: MFA Enrollment (ProfileModal)
+
+This flow occurs when a logged-in user enables 2-Factor Authentication (2FA). We use a **visible checkbox** widget.
+
+### Key Logic
+
+- **On-Demand Rendering**: The widget is NOT rendered on page load. It renders only when the user clicks **"Send Code"**.
+- **Verification Flow**:
+  1.  User enters phone number and clicks "Send Code".
+  2.  Code checks if `RecaptchaVerifier` exists. If not, it creates and renders it.
+  3.  A prompt asks the user to check the "I'm not a robot" box.
+  4.  Firebase SDK automatically waits for the user to solve the challenge.
+  5.  Upon solution, the SMS is sent automatically.
+
+### Code Snippet (`ProfileModal.tsx`)
+
+```typescript
+const handleSendMfaCode = async () => {
+  // 1. Initialize & Render Verifier if missing
+  if (!verifierRef.current) {
+    const { getRecaptchaVerifier } = await import(
+      "../../services/firebaseService"
+    );
+    const verifier = getRecaptchaVerifier("recaptcha-container"); // size: 'normal'
+    verifierRef.current = verifier;
+    await verifier.render(); // Shows the widget
+
+    setToast({ message: "Please check the box...", type: "info" });
+  }
+
+  // 2. Pass Verifier to Firebase SDK
+  // SDK handles the "Wait for user check" logic internally
+  const verificationId = await sendMfaEnrollmentCode(
+    mfaPhoneNumber,
+    verifierRef.current
+  );
+
+  // 3. SMS Sent
+  setMfaVerificationId(verificationId);
+};
+```
+
+### Sequence Diagram: MFA Enrollment
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor User as 사용자 (User)
-    participant Component as ProfileModal (React)
-    participant UseAuth as useAuth (Hook)
-    participant Firebase as Firebase Auth SDK
-    participant SMS as SMS Provider
+    participant User
+    participant StandardUI as ProfileModal UI
+    participant Handler as handleSendMfaCode
+    participant Verifier as RecaptchaVerifier
+    participant SDK as Firebase Auth SDK
+    participant Server as Firebase Server
 
-    Note over User, Component: 1. 전화번호 입력 단계
+    User->>StandardUI: Enters Phone Number
+    User->>StandardUI: Clicks "Send Code"
+    StandardUI->>Handler: Trigger Event
 
-    User->>Component: 전화번호 입력 후 "Send Code" 클릭
-    Component->>Component: handleSendMfaCode() 실행
+    rect rgb(240, 248, 255)
+        Note right of Handler: 1. Setup Recaptcha
+        alt Verifier Not Exists
+            Handler->>Verifier: Create Instance (size='normal')
+            Handler->>Verifier: render()
+            Verifier-->>StandardUI: Show "I'm not a robot" Widget
+            Handler->>User: Toast "Please verify captcha"
+        end
+    end
 
-    Component->>UseAuth: sendMfaEnrollmentCode(phoneNumber, "recaptcha-container")
+    rect rgb(255, 250, 240)
+        Note right of SDK: 2. Verification & SMS
+        Handler->>SDK: verifyPhoneNumber(phone, verifier)
+        SDK->>Verifier: Wait for 'solved' state
 
-    UseAuth->>Firebase: RecaptchaVerifier 생성 & 렌더링
-    Firebase-->>User: Recaptcha 챌린지 표시 (I'm not a robot)
+        User->>Verifier: Clicks Checkbox (Solves Puzzle)
+        Verifier-->>SDK: Returns Recaptcha Token
 
-    User->>Firebase: Recaptcha 챌린지 수행 및 완료
+        SDK->>Server: Send Token + Phone Number
+        Server-->>Server: Validate Enterprise Token
+        Server-->>SDK: Return Verification ID (SMS Sent)
+    end
 
-    Note over Firebase: Recaptcha 검증 성공 시
-
-    Firebase->>SMS: 인증번호(SMS) 발송 요청
-    SMS-->>User: SMS 수신 (인증코드 6자리)
-
-    Firebase-->>UseAuth: verificationId 반환
-    UseAuth-->>Component: verificationId, verifier 인스턴스 반환
-
-    Component->>Component: setMfaVerificationId(id)<br/>setMfaStep("verifying")
-    Component-->>User: 인증코드 입력 UI 표시
-
-    Note over User, Component: 2. 인증코드 확인 단계
-
-    User->>Component: SMS 인증코드 입력 후 "Verify" 클릭
-    Component->>Component: handleEnrollMfa() 실행
-
-    Component->>UseAuth: finalizeMfaEnrollment(verificationId, code)
-
-    UseAuth->>Firebase: PhoneMultiFactorGenerator.assertion(cred)
-    UseAuth->>Firebase: user.multiFactor.enroll(assertion)
-
-    Firebase-->>UseAuth: 등록 성공 응답
-    UseAuth-->>Component: 성공 반환
-
-    Component->>Component: setMfaStep("idle")<br/>Toast("2FA Enabled successfully")
-    Component-->>User: "Enabled checking" 상태 표시
+    SDK-->>Handler: verificationId
+    Handler->>StandardUI: Show Code Input Screen
 ```
 
-## 주요 단계 설명
+---
 
-1.  **초기화 및 요청**: 사용자가 전화번호를 입력하고 요청하면 `recpatcha-container` ID를 가진 DOM 요소에 Firebase의 보이지 않는(invisible) 혹은 보이는 Recaptcha 위젯이 주입됩니다.
-2.  **Recaptcha 검증**: Google은 이 요청이 봇이 아님을 확인하기 위해 Recaptcha를 수행합니다. 이 과정이 통과되어야만 SMS가 발송됩니다. (비용 및 스팸 방지)
-3.  **인증 및 등록**: 사용자가 받은 SMS 코드를 입력하면, 앞서 받은 `verificationId`와 결합하여 최종적으로 사용자의 계정에 MFA 요소(Phone Info)를 등록합니다.
+## 4. Implementation: MFA Sign-In & Badge (AuthProvider)
+
+When a user logs in (or is logged in with MFA enabled), **Invisible reCAPTCHA** protects the session.
+
+### Badge Visibility Control
+
+The reCAPTCHA badge (`protected by reCAPTCHA`) is injected specifically by the Enterprise SDK. We toggle its visibility based on the user's Auth state.
+
+- **Logged In + MFA Enabled**: Badge **Visible**.
+- **Logged Out / MFA Disabled**: Badge **Hidden**.
+
+### Code Snippet (`AuthProvider.tsx`)
+
+```typescript
+useEffect(() => {
+  const updateBadgeVisibility = () => {
+    const badge = document.querySelector(".grecaptcha-badge") as HTMLElement;
+    if (badge) {
+      // Show only if User is logged in AND has MFA enrolled
+      const isMfaEnabled =
+        currentUser && multiFactor(currentUser).enrolledFactors.length > 0;
+      badge.style.visibility = isMfaEnabled ? "visible" : "hidden";
+    }
+  };
+  // Use MutationObserver to handle async script loading
+  // ...
+}, [currentUser]);
+```
+
+### Sequence Diagram: Login & Badge
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App as AuthProvider
+    participant DOM as DOM (.grecaptcha-badge)
+    participant SDK as Firebase Auth SDK
+
+    Note over User, SDK: MFA Sign-In Flow
+
+    User->>SDK: Login (Email/Pass)
+    SDK-->>App: Return User (MFA Enabled)
+
+    rect rgb(230, 255, 230)
+        Note right of App: Badge Visibility Logic
+        App->>App: Check currentUser && enrolledFactors > 0
+        alt MFA Enabled
+            App->>DOM: style.visibility = 'visible'
+        else MFA Disabled / Logged Out
+            App->>DOM: style.visibility = 'hidden'
+        end
+    end
+
+    User->>DOM: Sees "Protected by reCAPTCHA" Badge
+```
+
+---
+
+## 5. Troubleshooting Common Issues
+
+### `auth/invalid-app-credential`
+
+- **Cause**: The request domain is not authorized or API Key restrictions block the request.
+- **Fix**:
+  1.  Check **Authorized Domains** in Firebase Console (add `localhost`).
+  2.  Check **API Key Restrictions** in Google Cloud Console. Ensure `reCAPTCHA Enterprise API` and `Identity Toolkit API` are allowed.
+  3.  If testing on `localhost`, consider using **Test Phone Numbers** (+82 10-1234-5678) to bypass strict Enterprise checks.
+
+### `auth/invalid-recaptcha-token`
+
+- **Cause**: The token generation failed, was double-used, or timed out.
+- **Fix**:
+  1.  Ensure you create a **single** instance of `RecaptchaVerifier` (use `useRef`).
+  2.  Do NOT call `sendMfaEnrollmentCode` multiple times for one solve.
+  3.  If the user cancels, **Clear** the verifier: `verifierRef.current.clear()`.
+
+### `auth/requires-recent-login`
+
+- **Cause**: Security sensitive action (enabling MFA) requires fresh authentication.
+- **Fix**: Re-authenticate the user (Logout & Login) before accessing the Profile/MFA settings.
