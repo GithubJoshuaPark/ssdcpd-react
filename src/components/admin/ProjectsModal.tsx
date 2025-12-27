@@ -67,6 +67,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
     null
   );
   const [processing, setProcessing] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"list" | "form">("list");
 
   const loadProjects = useCallback(async () => {
     setLoading(true);
@@ -204,6 +205,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
       }
       resetForm();
       loadProjects();
+      setMobileTab("list");
     } catch (error) {
       console.error("Error saving project:", error);
       setToast({ message: "Failed to save project.", type: "error" });
@@ -230,6 +232,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
     });
     setSkillInput("");
     setShareholderInput("");
+    setMobileTab("list");
   };
 
   const handleEdit = (project: Project) => {
@@ -251,6 +254,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
     // Scroll to top of the modal content to see the form
     const modalContent = document.querySelector(".contact-modal-content");
     if (modalContent) modalContent.scrollTop = 0;
+    setMobileTab("form");
   };
 
   const handleDeleteClick = (id: string) => {
@@ -305,571 +309,695 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
         </h2>
 
         <div className="contact-modal-content">
+          <style>
+            {`
+              .mobile-tabs {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 15px;
+                background: rgba(255,255,255,0.05);
+                padding: 4px;
+                border-radius: 8px;
+              }
+              .mobile-tab-btn {
+                flex: 1;
+                padding: 8px;
+                border: none;
+                background: transparent;
+                color: var(--text-muted);
+                border-radius: 6px;
+                font-size: 0.9rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+              }
+              .mobile-tab-btn.active {
+                background: var(--accent);
+                color: white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+              }
+              .project-card-image {
+                width: 70px;
+                height: 70px;
+                border-radius: 10px;
+                object-fit: cover;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+              }
+              @media (max-width: 640px) {
+                .project-card-image {
+                  width: 100%;
+                  height: 180px;
+                  margin-bottom: 12px;
+                }
+              }
+            `}
+          </style>
+
+          {/* Tabs (Visible on both Desktop and Mobile now) */}
+          <div className="mobile-tabs">
+            <button
+              className={`mobile-tab-btn ${
+                mobileTab === "list" ? "active" : ""
+              }`}
+              onClick={() => {
+                setMobileTab("list");
+                if (editingProject) resetForm(); // Clear edit state when switching to list
+              }}
+            >
+              Project List
+            </button>
+            <button
+              className={`mobile-tab-btn ${
+                mobileTab === "form" ? "active" : ""
+              }`}
+              onClick={() => {
+                if (mobileTab === "list") resetForm(); // Only reset if coming from list (new project)
+                setMobileTab("form");
+              }}
+            >
+              {editingProject ? "Edit Project" : "New Project"}
+            </button>
+          </div>
+
           {/* Form Section */}
-          <div className="contact-form-side">
-            <form onSubmit={handleSubmit} className="auth-form">
-              <div className="form-grid">
-                <div className="auth-form-group">
-                  <label>Project Name</label>
-                  <input
-                    type="text"
-                    name="projectName"
-                    value={formData.projectName}
-                    onChange={handleChange}
-                    className="auth-input"
-                    required
-                  />
-                </div>
-                <div className="auth-form-group">
-                  <label>User Role</label>
-                  <input
-                    type="text"
-                    name="userRole"
-                    value={formData.userRole}
-                    onChange={handleChange}
-                    className="auth-input"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-grid">
-                <div className="auth-form-group">
-                  <label>Start Date</label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleChange}
-                    className="auth-input"
-                    required
-                  />
-                </div>
-                <div className="auth-form-group">
-                  <label>End Date</label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleChange}
-                    className="auth-input"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="auth-form-group">
-                <label>Description</label>
-                <RichEditor
-                  value={formData.description}
-                  onChange={content =>
-                    setFormData(prev => ({ ...prev, description: content }))
-                  }
-                  placeholder="Enter project description..."
-                  minHeight="150px"
-                />
-              </div>
-
-              <div className="form-grid">
-                <div className="auth-form-group">
-                  <label>Demo URL</label>
-                  <input
-                    type="url"
-                    name="demoUrl"
-                    value={formData.demoUrl}
-                    onChange={handleChange}
-                    className="auth-input"
-                    placeholder="https://..."
-                  />
-                </div>
-                <div className="auth-form-group">
-                  <label>Git URL</label>
-                  <input
-                    type="url"
-                    name="gitUrl"
-                    value={formData.gitUrl}
-                    onChange={handleChange}
-                    className="auth-input"
-                    placeholder="https://github.com/..."
-                  />
-                </div>
-              </div>
-
-              <div className="auth-form-group">
-                <label>Project Image</label>
-                <div className="file-upload-group">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="auth-input"
-                    style={{ width: "100%" }}
-                  />
-                  {formData.imageUrl && (
-                    <img
-                      src={formData.imageUrl}
-                      alt="Preview"
-                      style={{
-                        width: "44px",
-                        height: "44px",
-                        borderRadius: "4px",
-                        objectFit: "cover",
-                        border: "1px solid var(--card-border)",
-                      }}
+          {mobileTab === "form" && (
+            <div className="contact-form-side" style={{ width: "100%" }}>
+              <form onSubmit={handleSubmit} className="auth-form">
+                <div className="form-grid">
+                  <div className="auth-form-group">
+                    <label>Project Name</label>
+                    <input
+                      type="text"
+                      name="projectName"
+                      value={formData.projectName}
+                      onChange={handleChange}
+                      className="auth-input"
+                      required
                     />
+                  </div>
+                  <div className="auth-form-group">
+                    <label>User Role</label>
+                    <input
+                      type="text"
+                      name="userRole"
+                      value={formData.userRole}
+                      onChange={handleChange}
+                      className="auth-input"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-grid">
+                  <div className="auth-form-group">
+                    <label>Start Date</label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={formData.startDate}
+                      onChange={handleChange}
+                      className="auth-input"
+                      required
+                    />
+                  </div>
+                  <div className="auth-form-group">
+                    <label>End Date</label>
+                    <input
+                      type="date"
+                      name="endDate"
+                      value={formData.endDate}
+                      onChange={handleChange}
+                      className="auth-input"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="auth-form-group">
+                  <label>Description</label>
+                  <RichEditor
+                    value={formData.description}
+                    onChange={content =>
+                      setFormData(prev => ({ ...prev, description: content }))
+                    }
+                    placeholder="Enter project description..."
+                    minHeight="150px"
+                  />
+                </div>
+
+                <div className="form-grid">
+                  <div className="auth-form-group">
+                    <label>Demo URL</label>
+                    <input
+                      type="url"
+                      name="demoUrl"
+                      value={formData.demoUrl}
+                      onChange={handleChange}
+                      className="auth-input"
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div className="auth-form-group">
+                    <label>Git URL</label>
+                    <input
+                      type="url"
+                      name="gitUrl"
+                      value={formData.gitUrl}
+                      onChange={handleChange}
+                      className="auth-input"
+                      placeholder="https://github.com/..."
+                    />
+                  </div>
+                </div>
+
+                <div className="auth-form-group">
+                  <label>Project Image</label>
+                  <div className="file-upload-group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="auth-input"
+                      style={{ width: "100%" }}
+                    />
+                    {formData.imageUrl && (
+                      <img
+                        src={formData.imageUrl}
+                        alt="Preview"
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          borderRadius: "4px",
+                          objectFit: "cover",
+                          border: "1px solid var(--card-border)",
+                        }}
+                      />
+                    )}
+                  </div>
+                  {uploading && (
+                    <small style={{ color: "var(--accent)" }}>
+                      Uploading...
+                    </small>
                   )}
                 </div>
-                {uploading && (
-                  <small style={{ color: "var(--accent)" }}>Uploading...</small>
-                )}
-              </div>
 
-              <div className="auth-form-group" style={{ position: "relative" }}>
-                <label>Shareholders</label>
                 <div
-                  style={{ display: "flex", gap: "8px", marginBottom: "8px" }}
+                  className="auth-form-group"
+                  style={{ position: "relative" }}
                 >
-                  <input
-                    type="text"
-                    value={shareholderInput}
-                    onChange={e => {
-                      setShareholderInput(e.target.value);
-                      setShowUserDropdown(true);
-                    }}
-                    onFocus={() => setShowUserDropdown(true)}
-                    className="auth-input"
-                    style={{ flex: 1 }}
-                    placeholder="Search by name or email..."
-                    onKeyDown={e => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddShareholder();
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddShareholder}
-                    className="auth-button"
-                    style={{ padding: "8px 16px" }}
+                  <label>Shareholders</label>
+                  <div
+                    style={{ display: "flex", gap: "8px", marginBottom: "8px" }}
                   >
-                    Add
-                  </button>
+                    <input
+                      type="text"
+                      value={shareholderInput}
+                      onChange={e => {
+                        setShareholderInput(e.target.value);
+                        setShowUserDropdown(true);
+                      }}
+                      onFocus={() => setShowUserDropdown(true)}
+                      className="auth-input"
+                      style={{ flex: 1 }}
+                      placeholder="Search by name or email..."
+                      onKeyDown={e => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddShareholder();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddShareholder}
+                      className="auth-button"
+                      style={{ padding: "8px 16px" }}
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  {/* User Dropdown */}
+                  {showUserDropdown && shareholderInput.trim() !== "" && (
+                    <div
+                      ref={dropdownRef}
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        maxHeight: "200px",
+                        overflowY: "auto",
+                        backgroundColor: "var(--card-bg)",
+                        border: "1px solid var(--card-border)",
+                        borderRadius: "8px",
+                        zIndex: 100,
+                        boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {userProfiles
+                        .filter(user => {
+                          const search = shareholderInput.toLowerCase();
+                          return (
+                            (user.name || "").toLowerCase().includes(search) ||
+                            user.email.toLowerCase().includes(search)
+                          );
+                        })
+                        .map(user => (
+                          <div
+                            key={user.uid}
+                            onClick={() => {
+                              if (
+                                !(formData.shareholders || []).includes(
+                                  user.email
+                                )
+                              ) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  shareholders: [
+                                    ...(prev.shareholders || []),
+                                    user.email,
+                                  ],
+                                }));
+                              }
+                              setShareholderInput("");
+                              setShowUserDropdown(false);
+                            }}
+                            style={{
+                              padding: "10px 15px",
+                              cursor: "pointer",
+                              borderBottom: "1px solid var(--card-border)",
+                              transition: "background 0.2s",
+                            }}
+                            className="user-selection-item"
+                            onMouseEnter={e =>
+                              (e.currentTarget.style.backgroundColor =
+                                "rgba(255,255,255,0.05)")
+                            }
+                            onMouseLeave={e =>
+                              (e.currentTarget.style.backgroundColor =
+                                "transparent")
+                            }
+                          >
+                            <div
+                              style={{ fontWeight: "600", fontSize: "0.9rem" }}
+                            >
+                              {user.name || "Unknown User"}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "0.8rem",
+                                color: "var(--accent)",
+                              }}
+                            >
+                              {user.email}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "0.7rem",
+                                color: "var(--text-muted)",
+                              }}
+                            >
+                              UID: {user.uid}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+
+                  <div
+                    style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}
+                  >
+                    {(formData.shareholders || []).map(sh => (
+                      <span
+                        key={sh}
+                        className="tag"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          background: "rgba(56, 189, 248, 0.1)",
+                          color: "var(--accent)",
+                        }}
+                      >
+                        {sh}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveShareholder(sh)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "inherit",
+                            cursor: "pointer",
+                            fontSize: "1rem",
+                            lineHeight: 1,
+                          }}
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
-                {/* User Dropdown */}
-                {showUserDropdown && shareholderInput.trim() !== "" && (
+                <div className="auth-form-group">
+                  <label>Used Skills</label>
                   <div
-                    ref={dropdownRef}
+                    style={{ display: "flex", gap: "8px", marginBottom: "8px" }}
+                  >
+                    <input
+                      type="text"
+                      value={skillInput}
+                      onChange={e => setSkillInput(e.target.value)}
+                      className="auth-input"
+                      style={{ flex: 1 }}
+                      placeholder="Enter a skill..."
+                      onKeyDown={e =>
+                        e.key === "Enter" &&
+                        (e.preventDefault(), handleAddSkill())
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSkill}
+                      className="auth-button"
+                      style={{ padding: "8px 16px" }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div
+                    style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}
+                  >
+                    {formData.usedSkills.map(skill => (
+                      <span
+                        key={skill}
+                        className="tag"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        {skill}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSkill(skill)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "inherit",
+                            cursor: "pointer",
+                            fontSize: "1rem",
+                            lineHeight: 1,
+                          }}
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  style={{ display: "flex", gap: "10px", marginTop: "10px" }}
+                >
+                  <button
+                    type="submit"
+                    className="auth-button"
+                    disabled={loading || uploading}
+                    style={{ flex: 1 }}
+                  >
+                    {editingProject ? "Update Project" : "Add Project"}
+                  </button>
+                  {editingProject && (
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="track-cancel-button"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* List Section */}
+          {mobileTab === "list" && (
+            <div className="contact-list-side" style={{ width: "100%" }}>
+              <h3 style={{ fontSize: "1.1rem", marginBottom: "16px" }}>
+                Project List
+              </h3>
+
+              <div
+                className="auth-form-group"
+                style={{
+                  marginBottom: "16px",
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: "10px",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Search projects..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="auth-input"
+                  style={{ flex: 1, marginBottom: 0, minWidth: "200px" }}
+                />
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <span
                     style={{
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      right: 0,
-                      maxHeight: "200px",
-                      overflowY: "auto",
-                      backgroundColor: "var(--card-bg)",
-                      border: "1px solid var(--card-border)",
-                      borderRadius: "8px",
-                      zIndex: 100,
-                      boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-                      marginTop: "4px",
+                      fontSize: "0.85rem", // Consistent with UsersModal and others
+                      color: "var(--text-muted)",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    {userProfiles
-                      .filter(user => {
-                        const search = shareholderInput.toLowerCase();
-                        return (
-                          (user.name || "").toLowerCase().includes(search) ||
-                          user.email.toLowerCase().includes(search)
-                        );
-                      })
-                      .map(user => (
+                    Show:
+                  </span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={e => setItemsPerPage(Number(e.target.value))}
+                    className="auth-input"
+                    style={{
+                      width: "70px",
+                      padding: "6px 8px", // Adjusted padding for better look
+                      marginBottom: 0,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {[5, 10, 20, 30].map(val => (
+                      <option key={val} value={val}>
+                        {val}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div
+                className="contact-messages-list"
+                style={{ maxHeight: "none" }}
+              >
+                {loading && projects.length === 0 ? (
+                  <p>Loading projects...</p>
+                ) : filteredProjects.length === 0 ? (
+                  <p>No projects found.</p>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "16px",
+                    }}
+                  >
+                    {paginatedProjects.map(p => (
+                      <div
+                        key={p.id}
+                        className="user-mobile-card"
+                        style={{ padding: "16px" }}
+                      >
                         <div
-                          key={user.uid}
-                          onClick={() => {
-                            if (
-                              !(formData.shareholders || []).includes(
-                                user.email
-                              )
-                            ) {
-                              setFormData(prev => ({
-                                ...prev,
-                                shareholders: [
-                                  ...(prev.shareholders || []),
-                                  user.email,
-                                ],
-                              }));
-                            }
-                            setShareholderInput("");
-                            setShowUserDropdown(false);
-                          }}
                           style={{
-                            padding: "10px 15px",
-                            cursor: "pointer",
-                            borderBottom: "1px solid var(--card-border)",
-                            transition: "background 0.2s",
+                            display: "flex",
+                            gap: "16px",
+                            flexWrap: "wrap",
                           }}
-                          className="user-selection-item"
-                          onMouseEnter={e =>
-                            (e.currentTarget.style.backgroundColor =
-                              "rgba(255,255,255,0.05)")
-                          }
-                          onMouseLeave={e =>
-                            (e.currentTarget.style.backgroundColor =
-                              "transparent")
-                          }
                         >
-                          <div
-                            style={{ fontWeight: "600", fontSize: "0.9rem" }}
-                          >
-                            {user.name || "Unknown User"}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "0.8rem",
-                              color: "var(--accent)",
-                            }}
-                          >
-                            {user.email}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "0.7rem",
-                              color: "var(--text-muted)",
-                            }}
-                          >
-                            UID: {user.uid}
+                          {p.imageUrl && (
+                            <img
+                              src={p.imageUrl}
+                              alt={p.projectName}
+                              className="project-card-image"
+                            />
+                          )}
+                          <div style={{ flex: 1, minWidth: "200px" }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "start",
+                                gap: "10px",
+                                flexWrap: "wrap",
+                                marginBottom: "8px",
+                              }}
+                            >
+                              <h4
+                                style={{
+                                  margin: 0,
+                                  fontSize: "1.1rem",
+                                  fontWeight: "600",
+                                }}
+                              >
+                                {p.projectName}
+                              </h4>
+                              <div style={{ display: "flex", gap: "8px" }}>
+                                <button
+                                  className="track-edit-button"
+                                  style={{
+                                    padding: "6px 12px",
+                                    fontSize: "0.85rem",
+                                  }}
+                                  onClick={() => handleEdit(p)}
+                                  title="Edit Project"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="track-edit-button"
+                                  style={{
+                                    padding: "6px 12px",
+                                    fontSize: "0.85rem",
+                                    backgroundColor: "var(--accent)",
+                                  }}
+                                  onClick={() => {
+                                    onClose();
+                                    navigate(`/wbs/${p.id}`);
+                                  }}
+                                  title="Go to WBS"
+                                >
+                                  WBS
+                                </button>
+                                <button
+                                  className="track-delete-button"
+                                  style={{
+                                    padding: "6px 12px",
+                                    fontSize: "0.85rem",
+                                  }}
+                                  onClick={() => handleDeleteClick(p.id!)}
+                                  title="Delete Project"
+                                >
+                                  Del
+                                </button>
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "4px",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                }}
+                              >
+                                <span
+                                  className="role-badge admin"
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    padding: "2px 8px",
+                                  }}
+                                >
+                                  {p.userRole}
+                                </span>
+                              </div>
+                              <p
+                                style={{
+                                  margin: 0,
+                                  fontSize: "0.8rem",
+                                  color: "var(--text-muted)",
+                                  marginTop: "4px",
+                                }}
+                              >
+                                {p.startDate} ~ {p.endDate}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      ))}
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                  {(formData.shareholders || []).map(sh => (
-                    <span
-                      key={sh}
-                      className="tag"
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div
+                    className="pagination-controls"
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      gap: "15px",
+                      padding: "15px 0 5px",
+                      borderTop: "1px solid rgba(255,255,255,0.1)",
+                      marginTop: "15px",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="chip"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        background: "rgba(56, 189, 248, 0.1)",
-                        color: "var(--accent)",
+                        opacity: currentPage === 1 ? 0.5 : 1,
+                        cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                        padding: "4px 10px",
+                        fontSize: "0.8rem",
                       }}
                     >
-                      {sh}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveShareholder(sh)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "inherit",
-                          cursor: "pointer",
-                          fontSize: "1rem",
-                          lineHeight: 1,
-                        }}
-                      >
-                        &times;
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="auth-form-group">
-                <label>Used Skills</label>
-                <div
-                  style={{ display: "flex", gap: "8px", marginBottom: "8px" }}
-                >
-                  <input
-                    type="text"
-                    value={skillInput}
-                    onChange={e => setSkillInput(e.target.value)}
-                    className="auth-input"
-                    style={{ flex: 1 }}
-                    placeholder="Enter a skill..."
-                    onKeyDown={e =>
-                      e.key === "Enter" &&
-                      (e.preventDefault(), handleAddSkill())
-                    }
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddSkill}
-                    className="auth-button"
-                    style={{ padding: "8px 16px" }}
-                  >
-                    Add
-                  </button>
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                  {formData.usedSkills.map(skill => (
+                      &larr; Prev
+                    </button>
                     <span
-                      key={skill}
-                      className="tag"
+                      style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}
+                    >
+                      Page <strong>{currentPage}</strong> of {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="chip"
+                      disabled={currentPage === totalPages}
+                      onClick={() =>
+                        setCurrentPage(p => Math.min(totalPages, p + 1))
+                      }
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
+                        opacity: currentPage === totalPages ? 0.5 : 1,
+                        cursor:
+                          currentPage === totalPages
+                            ? "not-allowed"
+                            : "pointer",
+                        padding: "4px 10px",
+                        fontSize: "0.8rem",
                       }}
                     >
-                      {skill}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(skill)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "inherit",
-                          cursor: "pointer",
-                          fontSize: "1rem",
-                          lineHeight: 1,
-                        }}
-                      >
-                        &times;
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                <button
-                  type="submit"
-                  className="auth-button"
-                  disabled={loading || uploading}
-                  style={{ flex: 1 }}
-                >
-                  {editingProject ? "Update Project" : "Add Project"}
-                </button>
-                {editingProject && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="track-cancel-button"
-                  >
-                    Cancel
-                  </button>
+                      Next &rarr;
+                    </button>
+                  </div>
                 )}
               </div>
-            </form>
-          </div>
-
-          {/* List Section */}
-          <div className="contact-list-side">
-            <h3 style={{ fontSize: "1.1rem", marginBottom: "16px" }}>
-              Project List
-            </h3>
-
-            <div
-              className="auth-form-group"
-              style={{
-                marginBottom: "16px",
-                display: "flex",
-                flexDirection: "row",
-                gap: "10px",
-                alignItems: "center",
-                flexWrap: "wrap",
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Search projects..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="auth-input"
-                style={{ flex: 1, marginBottom: 0, minWidth: "200px" }}
-              />
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
-                <span
-                  style={{
-                    fontSize: "0.85rem", // Consistent with UsersModal and others
-                    color: "var(--text-muted)",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Show:
-                </span>
-                <select
-                  value={itemsPerPage}
-                  onChange={e => setItemsPerPage(Number(e.target.value))}
-                  className="auth-input"
-                  style={{
-                    width: "70px",
-                    padding: "6px 8px", // Adjusted padding for better look
-                    marginBottom: 0,
-                    cursor: "pointer",
-                  }}
-                >
-                  {[5, 10, 20, 30].map(val => (
-                    <option key={val} value={val}>
-                      {val}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
-
-            <div
-              className="contact-messages-list"
-              style={{ maxHeight: "none" }}
-            >
-              {loading && projects.length === 0 ? (
-                <p>Loading projects...</p>
-              ) : filteredProjects.length === 0 ? (
-                <p>No projects found.</p>
-              ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "16px",
-                  }}
-                >
-                  {paginatedProjects.map(p => (
-                    <div
-                      key={p.id}
-                      className="user-mobile-card"
-                      style={{ padding: "12px" }}
-                    >
-                      <div style={{ display: "flex", gap: "12px" }}>
-                        {p.imageUrl && (
-                          <img
-                            src={p.imageUrl}
-                            alt={p.projectName}
-                            style={{
-                              width: "60px",
-                              height: "60px",
-                              borderRadius: "8px",
-                              objectFit: "cover",
-                            }}
-                          />
-                        )}
-                        <div style={{ flex: 1 }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "start",
-                            }}
-                          >
-                            <h4 style={{ margin: 0, fontSize: "1rem" }}>
-                              {p.projectName}
-                            </h4>
-                            <div style={{ display: "flex", gap: "6px" }}>
-                              <button
-                                className="track-edit-button"
-                                style={{ padding: "2px 6px" }}
-                                onClick={() => handleEdit(p)}
-                              >
-                                E
-                              </button>
-                              <button
-                                className="track-edit-button"
-                                style={{
-                                  padding: "2px 6px",
-                                  backgroundColor: "var(--accent)",
-                                }}
-                                onClick={() => {
-                                  onClose();
-                                  navigate(`/wbs/${p.id}`);
-                                }}
-                              >
-                                WBS
-                              </button>
-                              <button
-                                className="track-delete-button"
-                                style={{ padding: "2px 6px" }}
-                                onClick={() => handleDeleteClick(p.id!)}
-                              >
-                                D
-                              </button>
-                            </div>
-                          </div>
-                          <p
-                            style={{
-                              margin: "4px 0",
-                              fontSize: "0.85rem",
-                              color: "var(--text-muted)",
-                            }}
-                          >
-                            {p.userRole}
-                          </p>
-                          <p
-                            style={{
-                              margin: "2px 0",
-                              fontSize: "0.75rem",
-                              color: "var(--text-muted)",
-                            }}
-                          >
-                            {p.startDate} ~ {p.endDate}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div
-                  className="pagination-controls"
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: "15px",
-                    padding: "15px 0 5px",
-                    borderTop: "1px solid rgba(255,255,255,0.1)",
-                    marginTop: "15px",
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="chip"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    style={{
-                      opacity: currentPage === 1 ? 0.5 : 1,
-                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                      padding: "4px 10px",
-                      fontSize: "0.8rem",
-                    }}
-                  >
-                    &larr; Prev
-                  </button>
-                  <span
-                    style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}
-                  >
-                    Page <strong>{currentPage}</strong> of {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    className="chip"
-                    disabled={currentPage === totalPages}
-                    onClick={() =>
-                      setCurrentPage(p => Math.min(totalPages, p + 1))
-                    }
-                    style={{
-                      opacity: currentPage === totalPages ? 0.5 : 1,
-                      cursor:
-                        currentPage === totalPages ? "not-allowed" : "pointer",
-                      padding: "4px 10px",
-                      fontSize: "0.8rem",
-                    }}
-                  >
-                    Next &rarr;
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </div>
       </div>
 

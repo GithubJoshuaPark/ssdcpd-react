@@ -1,6 +1,7 @@
 import { onValue, ref, remove } from "firebase/database";
 import type { FC } from "react";
 import { Fragment, useEffect, useState } from "react";
+import { useAuth } from "../../auth/useAuth";
 import { useI18n } from "../../i18n/useI18n";
 import { database } from "../../services/firebaseService";
 import type { Notice } from "../../types_interfaces/notice";
@@ -17,6 +18,7 @@ export const NoticesModal: FC<NoticesModalProps> = ({
   onClose,
   filterRecipient,
 }) => {
+  const { userProfile } = useAuth();
   const { lang } = useI18n(); // Fix lint: 't' unused
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,129 +218,236 @@ export const NoticesModal: FC<NoticesModalProps> = ({
               No notices found.
             </div>
           ) : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th style={{ width: "22%" }}>Date</th>
-                  <th style={{ width: "43%" }}>Subject</th>
-                  <th style={{ width: "15%", textAlign: "center" }}>
-                    Recipients
-                  </th>
-                  <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedNotices.map(notice => (
-                  <Fragment key={notice.id}>
-                    <tr className="admin-table-row">
-                      <td
-                        style={{
-                          fontSize: "0.85rem",
-                          color: "var(--text-muted)",
-                        }}
-                      >
-                        {formatDate(notice.sentAt)}
-                      </td>
-                      <td
-                        style={{ fontWeight: "500", color: "#fff" }}
-                        title={notice.subject}
-                      >
-                        {notice.subject}
-                      </td>
-                      <td style={{ textAlign: "center" }}>
-                        <span className="role-badge user">
-                          {getRecipientCount(notice.recipients)} users
-                        </span>
-                      </td>
-                      <td style={{ textAlign: "center" }}>
-                        <button
-                          className="action-btn view"
-                          onClick={() => toggleExpand(notice.id)}
+            <>
+              <table className="admin-table desktop-only">
+                <thead>
+                  <tr>
+                    <th style={{ width: "22%" }}>Date</th>
+                    <th style={{ width: "43%" }}>Subject</th>
+                    <th style={{ width: "15%", textAlign: "center" }}>
+                      Recipients
+                    </th>
+                    <th style={{ width: "20%", textAlign: "center" }}>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedNotices.map(notice => (
+                    <Fragment key={notice.id}>
+                      <tr className="admin-table-row">
+                        <td
+                          style={{
+                            fontSize: "0.85rem",
+                            color: "var(--text-muted)",
+                          }}
                         >
-                          {expandedNoticeId === notice.id ? "Hide" : "View"}
-                        </button>
-                        {!filterRecipient && (
+                          {formatDate(notice.sentAt)}
+                        </td>
+                        <td
+                          style={{ fontWeight: "500", color: "#fff" }}
+                          title={notice.subject}
+                        >
+                          {notice.subject}
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          <span className="role-badge user">
+                            {getRecipientCount(notice.recipients)} users
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "center" }}>
                           <button
-                            className="action-btn delete"
-                            onClick={e => handleDelete(notice.id, e)}
+                            className="action-btn view"
+                            onClick={() => toggleExpand(notice.id)}
                           >
-                            Del
+                            {expandedNoticeId === notice.id ? "Hide" : "View"}
                           </button>
-                        )}
-                      </td>
-                    </tr>
-                    {expandedNoticeId === notice.id && (
-                      <tr className="notice-detail-row">
-                        <td colSpan={4} style={{ padding: 0, border: "none" }}>
-                          <div
-                            style={{
-                              backgroundColor: "rgba(255, 255, 255, 0.05)",
-                              padding: "20px",
-                              borderBottom:
-                                "1px solid rgba(255, 255, 255, 0.1)",
-                              animation: "fadeIn 0.2s ease-in-out",
-                            }}
-                          >
-                            <div style={{ marginBottom: "15px" }}>
-                              <strong
-                                style={{
-                                  color: "var(--accent)",
-                                  display: "block",
-                                  marginBottom: "5px",
-                                }}
-                              >
-                                To:
-                              </strong>
-                              <div
-                                style={{
-                                  background: "rgba(0,0,0,0.2)",
-                                  padding: "8px",
-                                  borderRadius: "4px",
-                                  fontSize: "0.9rem",
-                                  color: "var(--text-muted)",
-                                  wordBreak: "break-all",
-                                  maxHeight: "100px",
-                                  overflowY: "auto",
-                                }}
-                              >
-                                {Array.isArray(notice.recipients)
-                                  ? notice.recipients.join(", ")
-                                  : notice.recipients}
-                              </div>
-                            </div>
-
-                            <div style={{ marginBottom: "10px" }}>
-                              <strong
-                                style={{
-                                  color: "var(--accent)",
-                                  display: "block",
-                                  marginBottom: "5px",
-                                }}
-                              >
-                                Message:
-                              </strong>
-                              <div
-                                className="ql-editor"
-                                style={{
-                                  backgroundColor: "#fff",
-                                  color: "#333",
-                                  padding: "15px",
-                                  borderRadius: "4px",
-                                  minHeight: "150px",
-                                }}
-                                dangerouslySetInnerHTML={{
-                                  __html: notice.content,
-                                }}
-                              />
-                            </div>
-                          </div>
+                          {(!filterRecipient ||
+                            userProfile?.role === "admin") && (
+                            <button
+                              className="action-btn delete"
+                              onClick={e => handleDelete(notice.id, e)}
+                            >
+                              Del
+                            </button>
+                          )}
                         </td>
                       </tr>
+                      {expandedNoticeId === notice.id && (
+                        <tr className="notice-detail-row">
+                          <td
+                            colSpan={4}
+                            style={{ padding: 0, border: "none" }}
+                          >
+                            <div
+                              style={{
+                                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                                padding: "20px",
+                                borderBottom:
+                                  "1px solid rgba(255, 255, 255, 0.1)",
+                                animation: "fadeIn 0.2s ease-in-out",
+                              }}
+                            >
+                              <div style={{ marginBottom: "15px" }}>
+                                <strong
+                                  style={{
+                                    color: "var(--accent)",
+                                    display: "block",
+                                    marginBottom: "5px",
+                                  }}
+                                >
+                                  To:
+                                </strong>
+                                <div
+                                  style={{
+                                    background: "rgba(0,0,0,0.2)",
+                                    padding: "8px",
+                                    borderRadius: "4px",
+                                    fontSize: "0.9rem",
+                                    color: "var(--text-muted)",
+                                    wordBreak: "break-all",
+                                    maxHeight: "100px",
+                                    overflowY: "auto",
+                                  }}
+                                >
+                                  {Array.isArray(notice.recipients)
+                                    ? notice.recipients.join(", ")
+                                    : notice.recipients}
+                                </div>
+                              </div>
+
+                              <div style={{ marginBottom: "10px" }}>
+                                <strong
+                                  style={{
+                                    color: "var(--accent)",
+                                    display: "block",
+                                    marginBottom: "5px",
+                                  }}
+                                >
+                                  Message:
+                                </strong>
+                                <div
+                                  className="ql-editor"
+                                  style={{
+                                    backgroundColor: "#fff",
+                                    color: "#333",
+                                    padding: "15px",
+                                    borderRadius: "4px",
+                                    minHeight: "150px",
+                                  }}
+                                  dangerouslySetInnerHTML={{
+                                    __html: notice.content,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Mobile View: Cards */}
+              <div className="notices-mobile-cards mobile-only">
+                {paginatedNotices.map(notice => (
+                  <div key={notice.id} className="notice-mobile-card">
+                    <div className="notice-mobile-card-header">
+                      <span className="notice-date">
+                        {formatDate(notice.sentAt)}
+                      </span>
+                      <span className="role-badge user">
+                        {getRecipientCount(notice.recipients)} users
+                      </span>
+                    </div>
+
+                    <div className="notice-mobile-card-body">
+                      <div className="notice-subject">{notice.subject}</div>
+                    </div>
+
+                    <div className="notice-mobile-card-footer">
+                      <button
+                        className="action-btn view full-width"
+                        onClick={() => toggleExpand(notice.id)}
+                      >
+                        {expandedNoticeId === notice.id
+                          ? "Hide Details"
+                          : "View Details"}
+                      </button>
+                      {(!filterRecipient || userProfile?.role === "admin") && (
+                        <button
+                          className="action-btn delete full-width"
+                          onClick={e => handleDelete(notice.id, e)}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+
+                    {expandedNoticeId === notice.id && (
+                      <div className="notice-mobile-card-details">
+                        <div style={{ marginBottom: "15px" }}>
+                          <strong
+                            style={{
+                              color: "var(--accent)",
+                              display: "block",
+                              marginBottom: "5px",
+                              fontSize: "0.9rem",
+                            }}
+                          >
+                            To:
+                          </strong>
+                          <div
+                            style={{
+                              background: "rgba(0,0,0,0.2)",
+                              padding: "8px",
+                              borderRadius: "4px",
+                              fontSize: "0.85rem",
+                              color: "var(--text-muted)",
+                              wordBreak: "break-all",
+                              maxHeight: "100px",
+                              overflowY: "auto",
+                            }}
+                          >
+                            {Array.isArray(notice.recipients)
+                              ? notice.recipients.join(", ")
+                              : notice.recipients}
+                          </div>
+                        </div>
+
+                        <div style={{ marginBottom: "10px" }}>
+                          <strong
+                            style={{
+                              color: "var(--accent)",
+                              display: "block",
+                              marginBottom: "5px",
+                              fontSize: "0.9rem",
+                            }}
+                          >
+                            Message:
+                          </strong>
+                          <div
+                            className="ql-editor"
+                            style={{
+                              backgroundColor: "#fff",
+                              color: "#333",
+                              padding: "12px",
+                              borderRadius: "4px",
+                              minHeight: "100px",
+                              fontSize: "0.9rem",
+                            }}
+                            dangerouslySetInnerHTML={{
+                              __html: notice.content,
+                            }}
+                          />
+                        </div>
+                      </div>
                     )}
-                  </Fragment>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
 
@@ -430,6 +539,12 @@ export const NoticesModal: FC<NoticesModalProps> = ({
           margin: 0 4px;
         }
 
+        .action-btn.full-width {
+          width: 100%;
+          flex: 1;
+          margin: 0;
+        }
+
         .action-btn.view {
           background: rgba(64, 196, 255, 0.1);
           color: #40c4ff;
@@ -454,6 +569,56 @@ export const NoticesModal: FC<NoticesModalProps> = ({
           border-color: #ff5252;
           transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(255, 82, 82, 0.2);
+        }
+
+        /* Mobile Card Styles */
+        .notices-mobile-cards {
+          flex-direction: column;
+          gap: 16px;
+          width: 100%;
+        }
+
+        .notice-mobile-card {
+           background: rgba(15, 23, 42, 0.6);
+           border: 1px solid rgba(148, 163, 184, 0.3);
+           border-radius: 12px;
+           padding: 16px;
+           transition: all 0.2s ease;
+        }
+
+        .notice-mobile-card-header {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           margin-bottom: 12px;
+           padding-bottom: 12px;
+           border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .notice-date {
+           font-size: 0.85rem;
+           color: var(--text-muted);
+        }
+
+        .notice-subject {
+           font-size: 1rem;
+           font-weight: 600;
+           color: #fff;
+           margin-bottom: 16px;
+           line-height: 1.4;
+        }
+
+        .notice-mobile-card-footer {
+           display: flex;
+           gap: 10px;
+           width: 100%;
+        }
+
+        .notice-mobile-card-details {
+           margin-top: 16px;
+           padding-top: 16px;
+           border-top: 1px solid rgba(148, 163, 184, 0.2);
+           animation: fadeIn 0.2s ease;
         }
       `}</style>
     </div>

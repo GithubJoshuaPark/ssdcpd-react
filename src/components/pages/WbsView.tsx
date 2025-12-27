@@ -43,6 +43,7 @@ export const WbsView: FC = () => {
   const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState<"list" | "form">("list");
 
   const [formData, setFormData] = useState<
     Omit<WbsItem, "id" | "projectId" | "createdAt" | "updatedAt">
@@ -123,6 +124,7 @@ export const WbsView: FC = () => {
       }
       resetForm();
       loadData();
+      setActiveTab("list");
     } catch (error) {
       console.error("Error saving WBS item:", error);
       setToast({ message: "Failed to save task.", type: "error" });
@@ -163,6 +165,7 @@ export const WbsView: FC = () => {
       order: item.order,
     });
 
+    setActiveTab("form");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -264,7 +267,60 @@ export const WbsView: FC = () => {
         </div>
       </header>
 
+      <style>
+        {`
+          .wbs-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            background: rgba(255,255,255,0.05);
+            padding: 4px;
+            border-radius: 8px;
+          }
+          .wbs-tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .wbs-tab-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+        `}
+      </style>
+
       {isAdmin && (
+        <div className="wbs-tabs">
+          <button
+            className={`wbs-tab-btn ${activeTab === "list" ? "active" : ""}`}
+            onClick={() => {
+              setActiveTab("list");
+              if (editingItem) resetForm();
+            }}
+          >
+            Task List
+          </button>
+          <button
+            className={`wbs-tab-btn ${activeTab === "form" ? "active" : ""}`}
+            onClick={() => {
+              if (activeTab === "list") resetForm();
+              setActiveTab("form");
+            }}
+          >
+            {editingItem ? "Edit Task" : "New Task"}
+          </button>
+        </div>
+      )}
+
+      {isAdmin && activeTab === "form" && (
         <section
           className="card"
           style={{ padding: "30px", marginBottom: "40px" }}
@@ -413,7 +469,10 @@ export const WbsView: FC = () => {
               {editingItem && (
                 <button
                   type="button"
-                  onClick={resetForm}
+                  onClick={() => {
+                    resetForm();
+                    setActiveTab("list");
+                  }}
                   className="primary-btn"
                   style={{
                     padding: "12px 24px",
@@ -430,449 +489,456 @@ export const WbsView: FC = () => {
         </section>
       )}
 
-      <section className="card" style={{ padding: "0", overflow: "hidden" }}>
-        <div
-          style={{
-            padding: "20px 24px",
-            borderBottom: "1px solid var(--card-border)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "16px",
-          }}
-        >
-          <h2 style={{ fontSize: "1.25rem", margin: 0 }}>Task Breakdown</h2>
-          <div style={{ position: "relative", minWidth: "300px" }}>
-            <FaSearch
-              style={{
-                position: "absolute",
-                left: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--text-muted)",
-                fontSize: "0.9rem",
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search tasks, descriptions..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="auth-input"
-              style={{
-                paddingLeft: "35px",
-                width: "100%",
-                fontSize: "0.9rem",
-                height: "40px",
-                borderRadius: "20px",
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid var(--card-border)",
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Desktop Table View */}
-        <div className="desktop-only" style={{ overflowX: "auto" }}>
-          <table
+      {(!isAdmin || activeTab === "list") && (
+        <section className="card" style={{ padding: "0", overflow: "hidden" }}>
+          <div
             style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              textAlign: "left",
+              padding: "20px 24px",
+              borderBottom: "1px solid var(--card-border)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "16px",
             }}
           >
-            <thead>
-              <tr style={{ background: "rgba(255,255,255,0.03)" }}>
-                <th
-                  style={{
-                    padding: "16px 24px",
-                    borderBottom: "1px solid var(--card-border)",
-                    width: "80px",
-                  }}
-                >
-                  Order
-                </th>
-                <th
-                  style={{
-                    padding: "16px 24px",
-                    borderBottom: "1px solid var(--card-border)",
-                  }}
-                >
-                  Task
-                </th>
-                <th
-                  style={{
-                    padding: "16px 24px",
-                    borderBottom: "1px solid var(--card-border)",
-                  }}
-                >
-                  Description
-                </th>
-                <th
-                  style={{
-                    padding: "16px 24px",
-                    borderBottom: "1px solid var(--card-border)",
-                  }}
-                >
-                  Assignee
-                </th>
-                <th
-                  style={{
-                    padding: "16px 24px",
-                    borderBottom: "1px solid var(--card-border)",
-                  }}
-                >
-                  Duration
-                </th>
-                <th
-                  style={{
-                    padding: "16px 24px",
-                    borderBottom: "1px solid var(--card-border)",
-                  }}
-                >
-                  Status
-                </th>
-                <th
-                  style={{
-                    padding: "16px 24px",
-                    borderBottom: "1px solid var(--card-border)",
-                  }}
-                >
-                  Progress
-                </th>
-                {isAdmin && (
+            <h2 style={{ fontSize: "1.25rem", margin: 0 }}>Task Breakdown</h2>
+            <div style={{ position: "relative", minWidth: "300px" }}>
+              <FaSearch
+                style={{
+                  position: "absolute",
+                  left: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "var(--text-muted)",
+                  fontSize: "0.9rem",
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Search tasks, descriptions..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="auth-input"
+                style={{
+                  paddingLeft: "35px",
+                  width: "100%",
+                  fontSize: "0.9rem",
+                  height: "40px",
+                  borderRadius: "20px",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid var(--card-border)",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="desktop-only" style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                textAlign: "left",
+              }}
+            >
+              <thead>
+                <tr style={{ background: "rgba(255,255,255,0.03)" }}>
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      borderBottom: "1px solid var(--card-border)",
+                      width: "80px",
+                    }}
+                  >
+                    Order
+                  </th>
                   <th
                     style={{
                       padding: "16px 24px",
                       borderBottom: "1px solid var(--card-border)",
                     }}
                   >
-                    Actions
+                    Task
                   </th>
-                )}
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredItems.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={8}
+                  <th
                     style={{
-                      padding: "40px",
-                      textAlign: "center",
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    {searchTerm
-                      ? "No tasks match your search."
-                      : "No tasks added yet. Start by adding a task above."}
-                  </td>
-                </tr>
-              ) : (
-                filteredItems.map((item: WbsItem) => (
-                  <tr
-                    key={item.id}
-                    style={{
+                      padding: "16px 24px",
                       borderBottom: "1px solid var(--card-border)",
-                      transition: "background 0.2s",
                     }}
-                    className="table-row-hover"
                   >
-                    <td
+                    Description
+                  </th>
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      borderBottom: "1px solid var(--card-border)",
+                    }}
+                  >
+                    Assignee
+                  </th>
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      borderBottom: "1px solid var(--card-border)",
+                    }}
+                  >
+                    Duration
+                  </th>
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      borderBottom: "1px solid var(--card-border)",
+                    }}
+                  >
+                    Status
+                  </th>
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      borderBottom: "1px solid var(--card-border)",
+                    }}
+                  >
+                    Progress
+                  </th>
+                  {isAdmin && (
+                    <th
                       style={{
                         padding: "16px 24px",
-                        color: "var(--text-muted)",
-                        fontWeight: "600",
+                        borderBottom: "1px solid var(--card-border)",
                       }}
                     >
-                      #{item.order}
+                      Actions
+                    </th>
+                  )}
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredItems.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      style={{
+                        padding: "40px",
+                        textAlign: "center",
+                        color: "var(--text-muted)",
+                      }}
+                    >
+                      {searchTerm
+                        ? "No tasks match your search."
+                        : "No tasks added yet. Start by adding a task above."}
                     </td>
-                    <td style={{ padding: "16px 24px" }}>
-                      <div style={{ fontWeight: "600" }}>{item.taskName}</div>
-                    </td>
-                    <td style={{ padding: "16px 24px" }}>
-                      {item.description ? (
-                        <div
-                          style={{
-                            fontSize: "0.85rem",
-                            color: "var(--text-muted)",
-                            maxWidth: "200px",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={item.description}
-                        >
-                          {item.description}
+                  </tr>
+                ) : (
+                  filteredItems.map((item: WbsItem) => (
+                    <tr
+                      key={item.id}
+                      style={{
+                        borderBottom: "1px solid var(--card-border)",
+                        transition: "background 0.2s",
+                      }}
+                      className="table-row-hover"
+                    >
+                      <td
+                        style={{
+                          padding: "16px 24px",
+                          color: "var(--text-muted)",
+                          fontWeight: "600",
+                        }}
+                      >
+                        #{item.order}
+                      </td>
+                      <td style={{ padding: "16px 24px" }}>
+                        <div style={{ fontWeight: "600" }}>{item.taskName}</div>
+                      </td>
+                      <td style={{ padding: "16px 24px" }}>
+                        {item.description ? (
+                          <div
+                            style={{
+                              fontSize: "0.85rem",
+                              color: "var(--text-muted)",
+                              maxWidth: "200px",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={item.description}
+                          >
+                            {item.description}
+                          </div>
+                        ) : (
+                          <span
+                            style={{
+                              color: "var(--text-muted)",
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            -
+                          </span>
+                        )}
+                      </td>
+
+                      <td
+                        style={{
+                          padding: "16px 24px",
+                          color: "var(--text-muted)",
+                        }}
+                      >
+                        {item.assignee || "-"}
+                      </td>
+                      <td style={{ padding: "16px 24px", fontSize: "0.85rem" }}>
+                        <div>{item.startDate}</div>
+                        <div style={{ color: "var(--text-muted)" }}>
+                          {item.endDate}
                         </div>
-                      ) : (
+                      </td>
+                      <td style={{ padding: "16px 24px" }}>
                         <span
                           style={{
-                            color: "var(--text-muted)",
-                            fontSize: "0.8rem",
+                            padding: "4px 12px",
+                            borderRadius: "20px",
+                            fontSize: "0.75rem",
+                            background: `${getStatusColor(item.status)}22`,
+                            color: getStatusColor(item.status),
+                            border: `1px solid ${getStatusColor(
+                              item.status
+                            )}44`,
+                            textTransform: "uppercase",
+                            fontWeight: "bold",
                           }}
                         >
-                          -
+                          {item.status.replace("-", " ")}
                         </span>
-                      )}
-                    </td>
-
-                    <td
-                      style={{
-                        padding: "16px 24px",
-                        color: "var(--text-muted)",
-                      }}
-                    >
-                      {item.assignee || "-"}
-                    </td>
-                    <td style={{ padding: "16px 24px", fontSize: "0.85rem" }}>
-                      <div>{item.startDate}</div>
-                      <div style={{ color: "var(--text-muted)" }}>
-                        {item.endDate}
-                      </div>
-                    </td>
-                    <td style={{ padding: "16px 24px" }}>
-                      <span
-                        style={{
-                          padding: "4px 12px",
-                          borderRadius: "20px",
-                          fontSize: "0.75rem",
-                          background: `${getStatusColor(item.status)}22`,
-                          color: getStatusColor(item.status),
-                          border: `1px solid ${getStatusColor(item.status)}44`,
-                          textTransform: "uppercase",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {item.status.replace("-", " ")}
-                      </span>
-                    </td>
-                    <td style={{ padding: "16px 24px", width: "150px" }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
+                      </td>
+                      <td style={{ padding: "16px 24px", width: "150px" }}>
                         <div
                           style={{
-                            flex: 1,
-                            height: "6px",
-                            background: "rgba(255,255,255,0.1)",
-                            borderRadius: "3px",
-                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
                           }}
                         >
                           <div
                             style={{
-                              width: `${item.progress}%`,
-                              height: "100%",
-                              background: getStatusColor(item.status),
+                              flex: 1,
+                              height: "6px",
+                              background: "rgba(255,255,255,0.1)",
                               borderRadius: "3px",
+                              overflow: "hidden",
                             }}
-                          />
-                        </div>
-                        <span style={{ fontSize: "0.75rem", minWidth: "35px" }}>
-                          {item.progress}%
-                        </span>
-                      </div>
-                    </td>
-                    {isAdmin && (
-                      <td style={{ padding: "16px 24px" }}>
-                        <div style={{ display: "flex", gap: "10px" }}>
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="secondary-btn"
-                            style={{
-                              padding: "8px",
-                              borderRadius: "50%",
-                              background: "transparent",
-                            }}
-                            title="Edit"
                           >
-                            <FaEdit color="var(--accent)" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(item.id!)}
-                            className="secondary-btn"
-                            style={{
-                              padding: "8px",
-                              borderRadius: "50%",
-                              background: "transparent",
-                            }}
-                            title="Delete"
+                            <div
+                              style={{
+                                width: `${item.progress}%`,
+                                height: "100%",
+                                background: getStatusColor(item.status),
+                                borderRadius: "3px",
+                              }}
+                            />
+                          </div>
+                          <span
+                            style={{ fontSize: "0.75rem", minWidth: "35px" }}
                           >
-                            <FaTrash color="#ef4444" />
-                          </button>
+                            {item.progress}%
+                          </span>
                         </div>
                       </td>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      {isAdmin && (
+                        <td style={{ padding: "16px 24px" }}>
+                          <div style={{ display: "flex", gap: "10px" }}>
+                            <button
+                              onClick={() => handleEdit(item)}
+                              className="secondary-btn"
+                              style={{
+                                padding: "8px",
+                                borderRadius: "50%",
+                                background: "transparent",
+                              }}
+                              title="Edit"
+                            >
+                              <FaEdit color="var(--accent)" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(item.id!)}
+                              className="secondary-btn"
+                              style={{
+                                padding: "8px",
+                                borderRadius: "50%",
+                                background: "transparent",
+                              }}
+                              title="Delete"
+                            >
+                              <FaTrash color="#ef4444" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Mobile Card View */}
-        <div
-          className="mobile-only"
-          style={{ flexDirection: "column", gap: "16px", padding: "16px" }}
-        >
-          {filteredItems.length === 0 ? (
-            <p style={{ textAlign: "center", color: "var(--text-muted)" }}>
-              {searchTerm
-                ? "No tasks match your search."
-                : "No tasks added yet."}
-            </p>
-          ) : (
-            filteredItems.map((item: WbsItem) => (
-              <div key={item.id} className="user-mobile-card">
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "start",
-                    marginBottom: "12px",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: "700", fontSize: "1.1rem" }}>
-                      {item.taskName}
-                    </div>
-                    {item.description && (
+          {/* Mobile Card View */}
+          <div
+            className="mobile-only"
+            style={{ flexDirection: "column", gap: "16px", padding: "16px" }}
+          >
+            {filteredItems.length === 0 ? (
+              <p style={{ textAlign: "center", color: "var(--text-muted)" }}>
+                {searchTerm
+                  ? "No tasks match your search."
+                  : "No tasks added yet."}
+              </p>
+            ) : (
+              filteredItems.map((item: WbsItem) => (
+                <div key={item.id} className="user-mobile-card">
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "start",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: "700", fontSize: "1.1rem" }}>
+                        {item.taskName}
+                      </div>
+                      {item.description && (
+                        <div
+                          style={{
+                            fontSize: "0.85rem",
+                            color: "var(--text-muted)",
+                            marginTop: "4px",
+                            lineHeight: "1.4",
+                          }}
+                        >
+                          {item.description}
+                        </div>
+                      )}
                       <div
                         style={{
                           fontSize: "0.85rem",
                           color: "var(--text-muted)",
-                          marginTop: "4px",
-                          lineHeight: "1.4",
+                          marginTop: "8px",
                         }}
                       >
-                        {item.description}
+                        Order: {item.order} | {item.assignee || "Unassigned"}
                       </div>
-                    )}
-                    <div
+                    </div>
+                    <span
                       style={{
-                        fontSize: "0.85rem",
-                        color: "var(--text-muted)",
-                        marginTop: "8px",
+                        padding: "4px 10px",
+                        borderRadius: "20px",
+                        fontSize: "0.7rem",
+                        background: `${getStatusColor(item.status)}22`,
+                        color: getStatusColor(item.status),
+                        border: `1px solid ${getStatusColor(item.status)}44`,
+                        textTransform: "uppercase",
+                        fontWeight: "bold",
                       }}
                     >
-                      Order: {item.order} | {item.assignee || "Unassigned"}
-                    </div>
+                      {item.status.replace("-", " ")}
+                    </span>
                   </div>
-                  <span
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: "20px",
-                      fontSize: "0.7rem",
-                      background: `${getStatusColor(item.status)}22`,
-                      color: getStatusColor(item.status),
-                      border: `1px solid ${getStatusColor(item.status)}44`,
-                      textTransform: "uppercase",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {item.status.replace("-", " ")}
-                  </span>
-                </div>
 
-                <div
-                  style={{
-                    fontSize: "0.85rem",
-                    marginBottom: "12px",
-                    display: "flex",
-                    gap: "12px",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  <span>📅 {item.startDate}</span>
-                  <span>🏁 {item.endDate}</span>
-                </div>
-
-                <div
-                  style={{
-                    marginBottom: "16px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
                   <div
                     style={{
-                      flex: 1,
-                      height: "8px",
-                      background: "rgba(255,255,255,0.1)",
-                      borderRadius: "4px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${item.progress}%`,
-                        height: "100%",
-                        background: getStatusColor(item.status),
-                      }}
-                    />
-                  </div>
-                  <span style={{ fontSize: "0.85rem", fontWeight: "600" }}>
-                    {item.progress}%
-                  </span>
-                </div>
-
-                {isAdmin && (
-                  <div
-                    style={{
+                      fontSize: "0.85rem",
+                      marginBottom: "12px",
                       display: "flex",
-                      justifyContent: "flex-end",
+                      gap: "12px",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    <span>📅 {item.startDate}</span>
+                    <span>🏁 {item.endDate}</span>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: "16px",
+                      display: "flex",
+                      alignItems: "center",
                       gap: "12px",
                     }}
                   >
-                    <button
-                      onClick={() => handleEdit(item)}
-                      className="primary-btn"
+                    <div
                       style={{
-                        padding: "8px 16px",
-                        fontSize: "0.85rem",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        background:
-                          "linear-gradient(135deg, var(--accent), #0ea5e9)",
-                        boxShadow: "0 8px 20px rgba(56, 189, 248, 0.3)",
-                        border: "none",
+                        flex: 1,
+                        height: "8px",
+                        background: "rgba(255,255,255,0.1)",
+                        borderRadius: "4px",
+                        overflow: "hidden",
                       }}
                     >
-                      <FaEdit /> Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(item.id!)}
-                      className="primary-btn"
-                      style={{
-                        padding: "8px 16px",
-                        fontSize: "0.85rem",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        background: "linear-gradient(135deg, #ef4444, #f87171)",
-                        boxShadow: "0 8px 20px rgba(239, 68, 68, 0.3)",
-                        border: "none",
-                        color: "#fff",
-                      }}
-                    >
-                      <FaTrash /> Delete
-                    </button>
+                      <div
+                        style={{
+                          width: `${item.progress}%`,
+                          height: "100%",
+                          background: getStatusColor(item.status),
+                        }}
+                      />
+                    </div>
+                    <span style={{ fontSize: "0.85rem", fontWeight: "600" }}>
+                      {item.progress}%
+                    </span>
                   </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </section>
+
+                  {isAdmin && (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: "12px",
+                      }}
+                    >
+                      <button
+                        onClick={() => handleEdit(item)}
+                        className="primary-btn"
+                        style={{
+                          padding: "8px 16px",
+                          fontSize: "0.85rem",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          background:
+                            "linear-gradient(135deg, var(--accent), #0ea5e9)",
+                          boxShadow: "0 8px 20px rgba(56, 189, 248, 0.3)",
+                          border: "none",
+                        }}
+                      >
+                        <FaEdit /> Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(item.id!)}
+                        className="primary-btn"
+                        style={{
+                          padding: "8px 16px",
+                          fontSize: "0.85rem",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          background:
+                            "linear-gradient(135deg, #ef4444, #f87171)",
+                          boxShadow: "0 8px 20px rgba(239, 68, 68, 0.3)",
+                          border: "none",
+                          color: "#fff",
+                        }}
+                      >
+                        <FaTrash /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+      )}
 
       {toast && (
         <Toast
