@@ -20,6 +20,7 @@ import {
   type MultiFactorError,
   type MultiFactorResolver,
   type PhoneMultiFactorInfo,
+  type User,
   type UserCredential,
 } from "firebase/auth";
 import {
@@ -494,6 +495,23 @@ export async function updateUserPassword(
     await updateUserProfile(user.uid, { password: newPassword });
   } catch (err) {
     console.error("Error updating password:", err);
+    throw err;
+  }
+}
+
+/**
+ * 사용자 객체를 받아 직접 비밀번호 변경 (이미 재인증된 경우 사용)
+ */
+export async function updatePasswordForUser(
+  user: User,
+  newPassword: string
+): Promise<void> {
+  try {
+    const { updatePassword } = await import("firebase/auth");
+    await updatePassword(user, newPassword);
+    await updateUserProfile(user.uid, { password: newPassword });
+  } catch (err) {
+    console.error("Error updating password for user directly:", err);
     throw err;
   }
 }

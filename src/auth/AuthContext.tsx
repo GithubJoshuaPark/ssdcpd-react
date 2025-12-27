@@ -43,6 +43,7 @@ export interface AuthContextType {
   ) => Promise<UserCredential>;
   getMfaResolver: (error: unknown) => MultiFactorResolver | null;
   disableMfa: (factorId: string) => Promise<void>;
+  changePasswordForUser: (user: User, newPassword: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(

@@ -20,6 +20,7 @@ import {
   getUserProfile,
   loginWithEmail,
   signupWithEmail,
+  updatePasswordForUser,
   updateUserPassword,
   updateUserProfile,
   uploadProfileImage,
@@ -211,6 +212,10 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     return firebaseGetMfaResolver(error);
   };
 
+  const changePasswordForUser = async (user: User, newPassword: string) => {
+    await updatePasswordForUser(user, newPassword);
+  };
+
   const value = {
     currentUser,
     userProfile,
@@ -230,6 +235,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     sendMfaSignInCode,
     resolveMfaSignIn,
     getMfaResolver,
+    changePasswordForUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

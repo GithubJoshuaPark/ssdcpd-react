@@ -14,6 +14,7 @@ import { Toast, type ToastType } from "../common/Toast";
 
 import {
   multiFactor,
+  type MultiFactorResolver,
   type PhoneMultiFactorInfo,
   type RecaptchaVerifier,
 } from "firebase/auth";
@@ -44,6 +45,10 @@ export const ProfileModal: FC<ProfileModalProps> = ({
     finalizeMfaEnrollment,
     disableMfa,
     currentUser,
+    getMfaResolver,
+    sendMfaSignInCode,
+    resolveMfaSignIn,
+    changePasswordForUser,
   } = useAuth();
   const { t } = useI18n();
 
@@ -62,7 +67,15 @@ export const ProfileModal: FC<ProfileModalProps> = ({
   const [showNewPasswordPrompt, setShowNewPasswordPrompt] = useState(false);
   const [showMfaDisableConfirm, setShowMfaDisableConfirm] = useState(false);
   const [currentPasswordTemp, setCurrentPasswordTemp] = useState("");
+  const [newPasswordTemp, setNewPasswordTemp] = useState("");
   const [processing, setProcessing] = useState(false);
+
+  // --- Password MFA States ---
+  const [pwdMfaResolver, setPwdMfaResolver] =
+    useState<MultiFactorResolver | null>(null);
+  const [pwdMfaVerificationId, setPwdMfaVerificationId] = useState("");
+  const [showPwdMfaPrompt, setShowPwdMfaPrompt] = useState(false);
+
   const verifierRef = useRef<RecaptchaVerifier | null>(null); // 리캡차 인스턴스 저장을 위한 상태 (Ref로 변경)
 
   // --- MFA States ---
@@ -273,10 +286,12 @@ export const ProfileModal: FC<ProfileModalProps> = ({
 
   const handleNewPasswordConfirm = async (newPassword: string) => {
     setShowNewPasswordPrompt(false);
+    setNewPasswordTemp(newPassword);
 
     if (newPassword.length < 6) {
       setToast({ message: t("auth.passwordTooShort"), type: "error" });
       setCurrentPasswordTemp(""); // Clear stored password
+      setNewPasswordTemp("");
       return;
     }
 
@@ -288,10 +303,42 @@ export const ProfileModal: FC<ProfileModalProps> = ({
         message: t("profile.passwordChangeSuccess"),
         type: "success",
       });
-      setCurrentPasswordTemp(""); // Clear stored password
+      setCurrentPasswordTemp("");
+      setNewPasswordTemp("");
     } catch (error) {
+      // Check for MFA requirement
+      const mfaResolver = getMfaResolver(error);
+      if (mfaResolver) {
+        console.log("MFA required for password change");
+        try {
+          // Trigger MFA SMS
+          // Re-using the profile Recaptcha container if available, or a dedicated one
+          // We'll use a specific ID for password operations to ideally separate logic
+          // But `recaptcha-container` is cleaner if we ensure uniqueness.
+          // Let's use "recaptcha-container-pwd" which we will add to JSX.
+          const vId = await sendMfaSignInCode(
+            mfaResolver,
+            "recaptcha-container-pwd"
+          );
+
+          setPwdMfaResolver(mfaResolver);
+          setPwdMfaVerificationId(vId);
+          setShowPwdMfaPrompt(true);
+          setToast({ message: "Please verify your identity", type: "info" });
+          setProcessing(false); // Stop generic processing, wait for user input
+          return;
+        } catch (mfaError) {
+          console.error("Failed to send MFA code:", mfaError);
+          setToast({
+            message: "Failed to send verification code",
+            type: "error",
+          });
+        }
+      }
+
       console.error("Password change error:", error);
-      setCurrentPasswordTemp(""); // Clear stored password
+      setCurrentPasswordTemp("");
+      setNewPasswordTemp("");
 
       // Check for specific Firebase errors
       if (error instanceof Error) {
@@ -304,12 +351,54 @@ export const ProfileModal: FC<ProfileModalProps> = ({
             type: "error",
           });
         } else {
-          setToast({ message: "Failed to change password", type: "error" });
+          // If not MFA and not wrong password
+          if (!mfaResolver) {
+            setToast({ message: "Failed to change password", type: "error" });
+          }
         }
       } else {
         setToast({ message: "Failed to change password", type: "error" });
       }
     } finally {
+      // Only stop processing if NOT moving to MFA step
+      // But we handled that returns above.
+      // If we fall through here, it means success or non-MFA error
+      setProcessing(false);
+    }
+  };
+
+  const handlePwdMfaConfirm = async (code: string) => {
+    setShowPwdMfaPrompt(false);
+    if (!pwdMfaResolver || !pwdMfaVerificationId) return;
+
+    setProcessing(true);
+    try {
+      // 1. Resolve MFA SignIn (Re-authenticates the user)
+      const userCredential = await resolveMfaSignIn(
+        pwdMfaResolver,
+        pwdMfaVerificationId,
+        code
+      );
+
+      // 2. Retry Password Change with the freshly authenticated user
+      await changePasswordForUser(userCredential.user, newPasswordTemp);
+
+      setToast({
+        message: t("profile.passwordChangeSuccess"),
+        type: "success",
+      });
+    } catch (error) {
+      console.error("MFA Password Change Error:", error);
+      setToast({
+        message: "Verification failed or password change failed",
+        type: "error",
+      });
+    } finally {
+      // Cleanup
+      setCurrentPasswordTemp("");
+      setNewPasswordTemp("");
+      setPwdMfaResolver(null);
+      setPwdMfaVerificationId("");
       setProcessing(false);
     }
   };
@@ -813,14 +902,16 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                   {loading ? "..." : t("profile.save")}
                 </button>
 
-                {/* 비밀번호 변경 */}
-                <button
-                  type="button"
-                  className="profile-secondary-button"
-                  onClick={handleChangePassword}
-                >
-                  {t("profile.changePassword")}
-                </button>
+                {/* 비밀번호 변경 - 소셜 로그인 등 비밀번호가 없는 경우 숨김 */}
+                {displayProfile?.password && (
+                  <button
+                    type="button"
+                    className="profile-secondary-button"
+                    onClick={handleChangePassword}
+                  >
+                    {t("profile.changePassword")}
+                  </button>
+                )}
 
                 {/* 계정 탈퇴 */}
                 <button
@@ -908,6 +999,26 @@ export const ProfileModal: FC<ProfileModalProps> = ({
           setCurrentPasswordTemp("");
         }}
       />
+
+      {/* Password Change MFA Prompt */}
+      <CustomPrompt
+        key={showPwdMfaPrompt ? "pwd-mfa-open" : "pwd-mfa-closed"}
+        isOpen={showPwdMfaPrompt}
+        title="2-Step Verification"
+        message="Enter the 6-digit code sent to your phone"
+        placeholder="ABC-123"
+        defaultValue="" // CustomPrompt might not support type="tel" easily, but placeholders help
+        onConfirm={handlePwdMfaConfirm}
+        onCancel={() => {
+          setShowPwdMfaPrompt(false);
+          setPwdMfaResolver(null);
+          setCurrentPasswordTemp("");
+          setNewPasswordTemp("");
+        }}
+      />
+
+      {/* Hidden container for Password Change Recaptcha */}
+      <div id="recaptcha-container-pwd" style={{ display: "none" }}></div>
 
       {processing && <LoadingSpinner />}
     </>
