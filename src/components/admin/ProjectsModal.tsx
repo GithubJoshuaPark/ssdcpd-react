@@ -446,8 +446,8 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       onChange={handleChange}
                       className="auth-input"
                       style={{
-                        width: "98%",
-                        maxWidth: "98%",
+                        width: "90%",
+                        maxWidth: "90%",
                         boxSizing: "border-box",
                       }}
                       required
@@ -465,8 +465,8 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       onChange={handleChange}
                       className="auth-input"
                       style={{
-                        width: "98%",
-                        maxWidth: "98%",
+                        width: "90%",
+                        maxWidth: "90%",
                         boxSizing: "border-box",
                       }}
                       required
