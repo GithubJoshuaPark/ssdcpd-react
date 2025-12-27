@@ -430,7 +430,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                   className="form-grid"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
                     gap: "10px",
                   }}
                 >
