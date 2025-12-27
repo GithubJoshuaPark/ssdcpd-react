@@ -549,7 +549,14 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                 >
                   <label>Shareholders</label>
                   <div
-                    style={{ display: "flex", gap: "8px", marginBottom: "8px" }}
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      marginBottom: "8px",
+                      width: "100%",
+                      maxWidth: "100%",
+                      boxSizing: "border-box",
+                    }}
                   >
                     <input
                       type="text"
@@ -706,7 +713,14 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                 <div className="auth-form-group">
                   <label>Used Skills</label>
                   <div
-                    style={{ display: "flex", gap: "8px", marginBottom: "8px" }}
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      marginBottom: "8px",
+                      width: "100%",
+                      maxWidth: "100%",
+                      boxSizing: "border-box",
+                    }}
                   >
                     <input
                       type="text"
