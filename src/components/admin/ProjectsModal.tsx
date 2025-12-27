@@ -426,7 +426,14 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
-                <div className="form-grid">
+                <div
+                  className="form-grid"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                    gap: "10px",
+                  }}
+                >
                   <div className="auth-form-group">
                     <label>Start Date</label>
                     <input
