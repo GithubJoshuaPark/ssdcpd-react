@@ -381,7 +381,15 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
 
           {/* Form Section */}
           {mobileTab === "form" && (
-            <div className="contact-form-side" style={{ width: "100%" }}>
+            <div
+              className="contact-form-side"
+              style={{
+                width: "100%",
+                maxWidth: "100%",
+                overflowX: "hidden",
+                boxSizing: "border-box",
+              }}
+            >
               <form onSubmit={handleSubmit} className="auth-form">
                 <div className="form-grid">
                   <div className="auth-form-group">
@@ -392,6 +400,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       value={formData.projectName}
                       onChange={handleChange}
                       className="auth-input"
+                      style={{
+                        width: "100%",
+                        maxWidth: "100%",
+                        boxSizing: "border-box",
+                      }}
                       required
                     />
                   </div>
@@ -403,6 +416,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       value={formData.userRole}
                       onChange={handleChange}
                       className="auth-input"
+                      style={{
+                        width: "100%",
+                        maxWidth: "100%",
+                        boxSizing: "border-box",
+                      }}
                       required
                     />
                   </div>
@@ -417,6 +435,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       value={formData.startDate}
                       onChange={handleChange}
                       className="auth-input"
+                      style={{
+                        width: "100%",
+                        maxWidth: "100%",
+                        boxSizing: "border-box",
+                      }}
                       required
                     />
                   </div>
@@ -428,6 +451,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       value={formData.endDate}
                       onChange={handleChange}
                       className="auth-input"
+                      style={{
+                        width: "100%",
+                        maxWidth: "100%",
+                        boxSizing: "border-box",
+                      }}
                       required
                     />
                   </div>
@@ -454,6 +482,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       value={formData.demoUrl}
                       onChange={handleChange}
                       className="auth-input"
+                      style={{
+                        width: "100%",
+                        maxWidth: "100%",
+                        boxSizing: "border-box",
+                      }}
                       placeholder="https://..."
                     />
                   </div>
@@ -465,6 +498,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       value={formData.gitUrl}
                       onChange={handleChange}
                       className="auth-input"
+                      style={{
+                        width: "100%",
+                        maxWidth: "100%",
+                        boxSizing: "border-box",
+                      }}
                       placeholder="https://github.com/..."
                     />
                   </div>
@@ -478,7 +516,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       accept="image/*"
                       onChange={handleFileUpload}
                       className="auth-input"
-                      style={{ width: "100%" }}
+                      style={{
+                        width: "100%",
+                        maxWidth: "100%",
+                        boxSizing: "border-box",
+                      }}
                     />
                     {formData.imageUrl && (
                       <img
@@ -518,7 +560,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       }}
                       onFocus={() => setShowUserDropdown(true)}
                       className="auth-input"
-                      style={{ flex: 1 }}
+                      style={{ flex: 1, minWidth: 0 }}
                       placeholder="Search by name or email..."
                       onKeyDown={e => {
                         if (e.key === "Enter") {
@@ -671,7 +713,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       value={skillInput}
                       onChange={e => setSkillInput(e.target.value)}
                       className="auth-input"
-                      style={{ flex: 1 }}
+                      style={{ flex: 1, minWidth: 0 }}
                       placeholder="Enter a skill..."
                       onKeyDown={e =>
                         e.key === "Enter" &&
