@@ -429,12 +429,15 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                 <div
                   className="form-grid"
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                    display: "flex",
+                    flexWrap: "wrap",
                     gap: "10px",
                   }}
                 >
-                  <div className="auth-form-group">
+                  <div
+                    className="auth-form-group"
+                    style={{ flex: "1 1 250px", minWidth: 0 }}
+                  >
                     <label>Start Date</label>
                     <input
                       type="date"
@@ -450,7 +453,10 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       required
                     />
                   </div>
-                  <div className="auth-form-group">
+                  <div
+                    className="auth-form-group"
+                    style={{ flex: "1 1 250px", minWidth: 0 }}
+                  >
                     <label>End Date</label>
                     <input
                       type="date"
