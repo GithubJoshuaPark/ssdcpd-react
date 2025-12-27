@@ -6,6 +6,7 @@ import { useI18n } from "../../i18n/useI18n";
 import { database } from "../../services/firebaseService";
 import type { Notice } from "../../types_interfaces/notice";
 import { ConfirmDialog } from "../common/ConfirmDialog";
+import DownloadDataWithExcelOrCsv from "../common/DownloadDataWithExcelOrCsv";
 
 interface NoticesModalProps {
   isOpen: boolean;
@@ -24,7 +25,9 @@ export const NoticesModal: FC<NoticesModalProps> = ({
   const [loading, setLoading] = useState(true);
   const [expandedNoticeId, setExpandedNoticeId] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
   const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
   // Filter & Pagination States
   const [searchTerm, setSearchTerm] = useState("");
@@ -194,8 +197,25 @@ export const NoticesModal: FC<NoticesModalProps> = ({
               <option value={30}>30</option>
             </select>
           </div>
+
+          <button
+            className="auth-button"
+            style={{
+              width: "auto",
+              padding: "6px 15px",
+              fontSize: "0.9rem",
+              marginBottom: 0,
+              backgroundColor: "var(--card-bg)",
+              border: "1px solid var(--accent)",
+              whiteSpace: "nowrap",
+            }}
+            onClick={() => setIsDownloadOpen(true)}
+          >
+            Export
+          </button>
         </div>
 
+        {/* Notices 목록 테이블/카드 */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {loading ? (
             <div
@@ -544,6 +564,22 @@ export const NoticesModal: FC<NoticesModalProps> = ({
           setConfirmOpen(false);
           setTargetDeleteId(null);
         }}
+      />
+
+      <DownloadDataWithExcelOrCsv
+        isOpen={isDownloadOpen}
+        onClose={() => setIsDownloadOpen(false)}
+        data={filteredNotices.map(n => ({
+          ...n,
+          sentAt: formatDate(n.sentAt),
+        }))}
+        headers={[
+          { key: "sentAt", label: "Date" },
+          { key: "subject", label: "Subject" },
+          { key: "recipients", label: "Recipients" },
+          { key: "content", label: "Content" },
+        ]}
+        fileName="notices_history"
       />
       <style>{`
         @keyframes fadeIn {

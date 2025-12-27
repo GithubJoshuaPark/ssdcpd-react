@@ -16,6 +16,7 @@ import type { Project } from "../../types_interfaces/project";
 import type { UserProfile } from "../../types_interfaces/userProfile";
 
 import { ConfirmDialog } from "../common/ConfirmDialog";
+import DownloadDataWithExcelOrCsv from "../common/DownloadDataWithExcelOrCsv";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 import { RichEditor } from "../common/RichEditor";
 import { Toast } from "../common/Toast";
@@ -68,6 +69,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
   );
   const [processing, setProcessing] = useState(false);
   const [mobileTab, setMobileTab] = useState<"list" | "form">("list");
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
   const loadProjects = useCallback(async () => {
     setLoading(true);
@@ -870,8 +872,25 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                     ))}
                   </select>
                 </div>
+
+                <button
+                  className="auth-button"
+                  style={{
+                    width: "auto",
+                    padding: "6px 15px",
+                    fontSize: "0.9rem",
+                    marginBottom: 0,
+                    backgroundColor: "var(--card-bg)",
+                    border: "1px solid var(--accent)",
+                    whiteSpace: "nowrap",
+                  }}
+                  onClick={() => setIsDownloadOpen(true)}
+                >
+                  Export
+                </button>
               </div>
 
+              {/* Projects 목록 테이블/카드 */}
               <div
                 className="contact-messages-list"
                 style={{ maxHeight: "none" }}
@@ -934,6 +953,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                                   style={{
                                     padding: "6px 12px",
                                     fontSize: "0.85rem",
+                                    backgroundColor: "rgba(88, 70, 70, 0.4)",
+                                    border: "1px solid var(--accent)",
+                                    color: "var(--accent)",
+                                    backdropFilter: "blur(4px)",
+                                    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
                                   }}
                                   onClick={() => handleEdit(p)}
                                   title="Edit Project"
@@ -945,7 +969,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                                   style={{
                                     padding: "6px 12px",
                                     fontSize: "0.85rem",
-                                    backgroundColor: "var(--accent)",
+                                    backgroundColor: "rgba(88, 70, 70, 0.4)",
+                                    border: "1px solid var(--accent)",
+                                    color: "var(--accent)",
+                                    backdropFilter: "blur(4px)",
+                                    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
                                   }}
                                   onClick={() => {
                                     onClose();
@@ -960,6 +988,11 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                                   style={{
                                     padding: "6px 12px",
                                     fontSize: "0.85rem",
+                                    backgroundColor: "rgba(88, 70, 70, 0.4)",
+                                    border: "1px solid var(--accent)",
+                                    color: "var(--accent)",
+                                    backdropFilter: "blur(4px)",
+                                    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
                                   }}
                                   onClick={() => handleDeleteClick(p.id!)}
                                   title="Delete Project"
@@ -1091,6 +1124,21 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
       />
 
       {processing && <LoadingSpinner />}
+
+      <DownloadDataWithExcelOrCsv
+        isOpen={isDownloadOpen}
+        onClose={() => setIsDownloadOpen(false)}
+        data={filteredProjects}
+        headers={[
+          { key: "projectName", label: "Project Name" },
+          { key: "userRole", label: "Role" },
+          { key: "startDate", label: "Start Date" },
+          { key: "endDate", label: "End Date" },
+          { key: "usedSkills", label: "Skills" },
+          { key: "shareholders", label: "Shareholders" },
+        ]}
+        fileName="projects_list"
+      />
     </div>
   );
 };

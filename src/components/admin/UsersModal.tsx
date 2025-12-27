@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useI18n } from "../../i18n/useI18n";
 import { getAllUserProfiles } from "../../services/firebaseService";
 import type { UserProfile } from "../../types_interfaces/userProfile";
+import DownloadDataWithExcelOrCsv from "../common/DownloadDataWithExcelOrCsv";
 import { Toast } from "../common/Toast";
 import { ProfileModal } from "../profile/ProfileModal";
 import { SendEmailModal } from "./SendEmailModal";
@@ -25,7 +26,9 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
 
   // --- Email Selection State ---
   const [selectedUids, setSelectedUids] = useState<Set<string>>(new Set());
+
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -231,6 +234,22 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
                 ))}
               </select>
             </div>
+
+            <button
+              className="auth-button"
+              style={{
+                width: "auto",
+                padding: "6px 15px",
+                fontSize: "0.9rem",
+                marginBottom: 0,
+                backgroundColor: "var(--card-bg)",
+                border: "1px solid var(--accent)",
+                whiteSpace: "nowrap",
+              }}
+              onClick={() => setIsDownloadOpen(true)}
+            >
+              Export
+            </button>
 
             {/* 이메일 발송 버튼 */}
             {selectedUids.size > 0 && (
@@ -544,6 +563,20 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
         onClose={() => setIsEmailModalOpen(false)}
         targetEmails={selectedEmails}
         onSendSuccess={() => setSelectedUids(new Set())}
+      />
+
+      <DownloadDataWithExcelOrCsv
+        isOpen={isDownloadOpen}
+        onClose={() => setIsDownloadOpen(false)}
+        data={filteredUsers}
+        headers={[
+          { key: "name", label: "Name" },
+          { key: "email", label: "Email" },
+          { key: "role", label: "Role" },
+          { key: "uid", label: "User ID" },
+          { key: "created_at", label: "Signed Up" },
+        ]}
+        fileName="users_list"
       />
 
       {error && (

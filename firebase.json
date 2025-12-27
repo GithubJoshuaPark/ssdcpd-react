@@ -10,7 +10,7 @@
     ]
   },
   "hosting": {
-    "target": "ssdcpd-react",
+    "target": "ssdcpd",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [

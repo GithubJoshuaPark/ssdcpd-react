@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { deleteTrack, getAllTracks } from "../../services/firebaseService";
 import type { Track } from "../../types_interfaces/track";
 import { ConfirmDialog } from "../common/ConfirmDialog";
+import DownloadDataWithExcelOrCsv from "../common/DownloadDataWithExcelOrCsv";
 import { Toast } from "../common/Toast";
-import { TrackFormModal } from "./TrackFormModal.tsx";
+import { TrackFormModal } from "./TrackFormModal";
 
 interface TracksModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export const TracksModal: FC<TracksModalProps> = ({ isOpen, onClose }) => {
   const [success, setSuccess] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
   const loadTracks = useCallback(async () => {
     setLoading(true);
@@ -200,12 +202,36 @@ export const TracksModal: FC<TracksModalProps> = ({ isOpen, onClose }) => {
                 ))}
               </select>
             </div>
+
+            <button
+              className="auth-button"
+              style={{
+                width: "auto",
+                padding: "6px 15px",
+                fontSize: "0.9rem",
+                marginBottom: 0,
+                backgroundColor: "var(--card-bg)",
+                border: "1px solid var(--accent)",
+                whiteSpace: "nowrap",
+              }}
+              onClick={() => setIsDownloadOpen(true)}
+            >
+              Export
+            </button>
+
             <button
               className="auth-button"
               onClick={handleAddNew}
-              style={{ marginBottom: 0, whiteSpace: "nowrap" }} // Prevent wrapping in button
+              style={{
+                width: "auto",
+                padding: "6px 15px",
+                fontSize: "0.9rem",
+                marginBottom: 0,
+                backgroundColor: "var(--accent)",
+                whiteSpace: "nowrap",
+              }} // Prevent wrapping in button
             >
-              + Add New Track
+              + Track
             </button>
           </div>
 
@@ -463,6 +489,21 @@ export const TracksModal: FC<TracksModalProps> = ({ isOpen, onClose }) => {
       {error && (
         <Toast message={error} type="error" onClose={() => setError(null)} />
       )}
+
+      <DownloadDataWithExcelOrCsv
+        isOpen={isDownloadOpen}
+        onClose={() => setIsDownloadOpen(false)}
+        data={filteredTracks}
+        headers={[
+          { key: "title", label: "Title" },
+          { key: "category", label: "Category" },
+          { key: "level", label: "Level" },
+          { key: "status", label: "Status" },
+          { key: "tags", label: "Tags" },
+          { key: "url", label: "URL" },
+        ]}
+        fileName="tracks_list"
+      />
     </>
   );
 };
