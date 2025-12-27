@@ -219,11 +219,12 @@ export const NoticesModal: FC<NoticesModalProps> = ({
             </div>
           ) : (
             <>
-              <table className="admin-table desktop-only">
+              {/* Desktop View: Table */}
+              <table className="users-table desktop-only">
                 <thead>
                   <tr>
-                    <th style={{ width: "22%" }}>Date</th>
-                    <th style={{ width: "43%" }}>Subject</th>
+                    <th style={{ width: "20%" }}>Date</th>
+                    <th style={{ width: "45%" }}>Subject</th>
                     <th style={{ width: "15%", textAlign: "center" }}>
                       Recipients
                     </th>
@@ -236,41 +237,77 @@ export const NoticesModal: FC<NoticesModalProps> = ({
                   {paginatedNotices.map(notice => (
                     <Fragment key={notice.id}>
                       <tr className="admin-table-row">
-                        <td
-                          style={{
-                            fontSize: "0.85rem",
-                            color: "var(--text-muted)",
-                          }}
-                        >
-                          {formatDate(notice.sentAt)}
+                        <td>
+                          <span
+                            style={{
+                              fontSize: "0.85rem",
+                              color: "var(--text-muted)",
+                            }}
+                          >
+                            {formatDate(notice.sentAt)}
+                          </span>
                         </td>
-                        <td
-                          style={{ fontWeight: "500", color: "#fff" }}
-                          title={notice.subject}
-                        >
-                          {notice.subject}
+                        <td>
+                          <div
+                            style={{
+                              fontWeight: "500",
+                              color: "#fff",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: "300px",
+                            }}
+                            title={notice.subject}
+                          >
+                            {notice.subject}
+                          </div>
                         </td>
                         <td style={{ textAlign: "center" }}>
                           <span className="role-badge user">
                             {getRecipientCount(notice.recipients)} users
                           </span>
                         </td>
-                        <td style={{ textAlign: "center" }}>
-                          <button
-                            className="action-btn view"
-                            onClick={() => toggleExpand(notice.id)}
+                        <td>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "center",
+                              gap: "8px",
+                            }}
                           >
-                            {expandedNoticeId === notice.id ? "Hide" : "View"}
-                          </button>
-                          {(!filterRecipient ||
-                            userProfile?.role === "admin") && (
                             <button
-                              className="action-btn delete"
-                              onClick={e => handleDelete(notice.id, e)}
+                              className="users-detail-button"
+                              style={{
+                                background: "rgba(56, 189, 248, 0.15)",
+                                color: "#7dd3fc",
+                                border: "1px solid rgba(56, 189, 248, 0.3)",
+                                backdropFilter: "blur(4px)",
+                                boxShadow: "0 2px 10px rgba(56, 189, 248, 0.1)",
+                              }}
+                              onClick={() => toggleExpand(notice.id)}
                             >
-                              Del
+                              {expandedNoticeId === notice.id ? "Hide" : "View"}
                             </button>
-                          )}
+                            {(!filterRecipient ||
+                              userProfile?.role === "admin") && (
+                              <button
+                                className="track-delete-button"
+                                style={{
+                                  padding: "6px 12px",
+                                  fontSize: "0.85rem",
+                                  background: "rgba(239, 68, 68, 0.2)",
+                                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                                  color: "#fca5a5",
+                                  backdropFilter: "blur(4px)",
+                                  boxShadow:
+                                    "0 2px 10px rgba(239, 68, 68, 0.1)",
+                                }}
+                                onClick={e => handleDelete(notice.id, e)}
+                              >
+                                Del
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                       {expandedNoticeId === notice.id && (
@@ -283,6 +320,7 @@ export const NoticesModal: FC<NoticesModalProps> = ({
                               style={{
                                 backgroundColor: "rgba(255, 255, 255, 0.05)",
                                 padding: "20px",
+                                borderTop: "1px solid rgba(255, 255, 255, 0.1)",
                                 borderBottom:
                                   "1px solid rgba(255, 255, 255, 0.1)",
                                 animation: "fadeIn 0.2s ease-in-out",
@@ -294,20 +332,23 @@ export const NoticesModal: FC<NoticesModalProps> = ({
                                     color: "var(--accent)",
                                     display: "block",
                                     marginBottom: "5px",
+                                    fontSize: "0.9rem",
                                   }}
                                 >
-                                  To:
+                                  Recipients:
                                 </strong>
                                 <div
                                   style={{
-                                    background: "rgba(0,0,0,0.2)",
-                                    padding: "8px",
+                                    background: "rgba(0,0,0,0.3)",
+                                    padding: "10px",
                                     borderRadius: "4px",
                                     fontSize: "0.9rem",
                                     color: "var(--text-muted)",
                                     wordBreak: "break-all",
                                     maxHeight: "100px",
                                     overflowY: "auto",
+                                    border:
+                                      "1px solid rgba(255, 255, 255, 0.1)",
                                   }}
                                 >
                                   {Array.isArray(notice.recipients)
@@ -316,15 +357,16 @@ export const NoticesModal: FC<NoticesModalProps> = ({
                                 </div>
                               </div>
 
-                              <div style={{ marginBottom: "10px" }}>
+                              <div>
                                 <strong
                                   style={{
                                     color: "var(--accent)",
                                     display: "block",
                                     marginBottom: "5px",
+                                    fontSize: "0.9rem",
                                   }}
                                 >
-                                  Message:
+                                  Message Content:
                                 </strong>
                                 <div
                                   className="ql-editor"
@@ -334,6 +376,8 @@ export const NoticesModal: FC<NoticesModalProps> = ({
                                     padding: "15px",
                                     borderRadius: "4px",
                                     minHeight: "150px",
+                                    maxHeight: "400px",
+                                    overflowY: "auto",
                                   }}
                                   dangerouslySetInnerHTML={{
                                     __html: notice.content,

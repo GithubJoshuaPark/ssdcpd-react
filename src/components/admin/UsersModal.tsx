@@ -251,7 +251,7 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
             )}
           </div>
 
-          {/* 사용자 목록 테이블 */}
+          {/* 사용자 목록 테이블/카드 */}
           <div className="users-table-container">
             {loading ? (
               <div className="users-loading">{t("admin.loading")}</div>
@@ -312,6 +312,13 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
                         <td>
                           <button
                             className="users-detail-button"
+                            style={{
+                              background: "rgba(56, 189, 248, 0.15)",
+                              color: "#7dd3fc",
+                              border: "1px solid rgba(56, 189, 248, 0.3)",
+                              backdropFilter: "blur(4px)",
+                              boxShadow: "0 2px 10px rgba(56, 189, 248, 0.1)",
+                            }}
                             onClick={() => handleUserClick(user)}
                           >
                             {t("admin.detail")}
@@ -359,11 +366,6 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
                             gap: "10px",
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={selectedUids.has(user.uid)}
-                            onChange={() => toggleSelectUser(user.uid)}
-                          />
                           <div className="users-avatar large">
                             {user.photoURL ? (
                               <img src={user.photoURL} alt={user.name} />
@@ -374,31 +376,95 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
                             )}
                           </div>
                         </div>
-                        <span className={`role-badge ${user.role}`}>
-                          {user.role}
-                        </span>
                       </div>
 
                       <div className="user-mobile-card-body">
-                        <div className="user-info-row">
-                          <span className="user-info-label">
+                        <div
+                          className="user-info-row"
+                          style={{
+                            display: "flex",
+                            justifyContent: "flex-start",
+                            gap: "10px",
+                            alignItems: "center",
+                          }}
+                        >
+                          <span
+                            className="user-info-label"
+                            style={{ minWidth: "60px" }}
+                          >
+                            Select
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={selectedUids.has(user.uid)}
+                            onChange={() => toggleSelectUser(user.uid)}
+                          />
+                        </div>
+                        <div
+                          className="user-info-row"
+                          style={{
+                            display: "flex",
+                            justifyContent: "flex-start",
+                            gap: "10px",
+                          }}
+                        >
+                          <span
+                            className="user-info-label"
+                            style={{ minWidth: "60px" }}
+                          >
                             {t("admin.table.name")}
                           </span>
                           <span className="user-info-value">
                             {user.name || "-"}
                           </span>
                         </div>
-                        <div className="user-info-row">
-                          <span className="user-info-label">
+                        <div
+                          className="user-info-row"
+                          style={{
+                            display: "flex",
+                            justifyContent: "flex-start",
+                            gap: "10px",
+                          }}
+                        >
+                          <span
+                            className="user-info-label"
+                            style={{ minWidth: "60px" }}
+                          >
                             {t("admin.table.email")}
                           </span>
                           <span className="user-info-value">{user.email}</span>
+                        </div>
+                        <div
+                          className="user-info-row"
+                          style={{
+                            display: "flex",
+                            justifyContent: "flex-start",
+                            gap: "10px",
+                            alignItems: "center",
+                          }}
+                        >
+                          <span
+                            className="user-info-label"
+                            style={{ minWidth: "60px" }}
+                          >
+                            {t("admin.table.role")}
+                          </span>
+                          <span className={`role-badge ${user.role}`}>
+                            {user.role}
+                          </span>
                         </div>
                       </div>
 
                       <div className="user-mobile-card-footer">
                         <button
                           className="users-detail-button full-width"
+                          style={{
+                            background: "rgba(56, 189, 248, 0.15)",
+                            color: "#7dd3fc",
+                            border: "1px solid rgba(56, 189, 248, 0.3)",
+                            backdropFilter: "blur(4px)",
+                            boxShadow: "0 2px 10px rgba(56, 189, 248, 0.1)",
+                          }}
                           onClick={() => handleUserClick(user)}
                         >
                           {t("admin.detail")}
