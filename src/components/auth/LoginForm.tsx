@@ -10,6 +10,7 @@ interface LoginFormProps {
   onSwitchToForgotPassword: () => void;
   onSuccess: () => void;
   onError: (message: string) => void;
+  initialResolver?: MultiFactorResolver;
 }
 
 export const LoginForm: FC<LoginFormProps> = ({
@@ -17,6 +18,7 @@ export const LoginForm: FC<LoginFormProps> = ({
   onSwitchToForgotPassword,
   onSuccess,
   onError,
+  initialResolver,
 }) => {
   const { login, getMfaResolver, sendMfaSignInCode, resolveMfaSignIn } =
     useAuth();
@@ -26,10 +28,27 @@ export const LoginForm: FC<LoginFormProps> = ({
   const [loading, setLoading] = useState(false);
 
   // --- MFA States ---
-  const [resolver, setResolver] = useState<MultiFactorResolver | null>(null);
+  const [resolver, setResolver] = useState<MultiFactorResolver | null>(
+    initialResolver || null
+  );
   const [verificationCode, setVerificationCode] = useState("");
   const [verificationId, setVerificationId] = useState("");
-  const [isMfaStep, setIsMfaStep] = useState(false);
+  const [isMfaStep, setIsMfaStep] = useState(!!initialResolver);
+
+  // Sync state with initialResolver prop
+  useEffect(() => {
+    if (initialResolver) {
+      setResolver(initialResolver);
+      setIsMfaStep(true);
+    } else {
+      // If initialResolver is cleared/undefined (e.g. modal reset), cleanup local state
+      // This prevents stale MFA screen if the component receives a reset
+      setResolver(null);
+      setIsMfaStep(false);
+      setVerificationId("");
+      setVerificationCode("");
+    }
+  }, [initialResolver]);
 
   // --- Toast State ---
   const [toast, setToast] = useState<{
@@ -131,12 +150,10 @@ export const LoginForm: FC<LoginFormProps> = ({
       <form className="auth-form" onSubmit={handleMfaVerify}>
         <div style={{ textAlign: "center", marginBottom: "20px" }}>
           <h3 style={{ color: "var(--accent)", marginBottom: "10px" }}>
-            🔒 {t("auth.googleLogin") ? "2-Step Verification" : "2단계 인증"}
+            🔒 {t("auth.2stepVerification")}
           </h3>
           <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-            {t("auth.googleSignup")
-              ? "Enter the 6-digit code sent to your phone."
-              : "등록된 전화번호로 전송된 6자리 코드를 입력하세요."}
+            {t("auth.6digitsInputAsking")}
           </p>
         </div>
 

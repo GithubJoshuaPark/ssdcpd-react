@@ -1,4 +1,5 @@
 // src/components/auth/AuthModal.tsx
+import type { MultiFactorResolver } from "firebase/auth";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { FaGoogle } from "react-icons/fa";
@@ -18,9 +19,12 @@ interface AuthModalProps {
 
 export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { t } = useI18n();
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, getMfaResolver } = useAuth();
   const [currentView, setCurrentView] = useState<AuthView>("login");
   const [loading, setLoading] = useState(false);
+  const [pendingMfaResolver, setPendingMfaResolver] = useState<
+    MultiFactorResolver | undefined
+  >(undefined);
   const [toast, setToast] = useState<{
     message: string;
     type: ToastType;
@@ -37,6 +41,16 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose }) => {
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setPendingMfaResolver(undefined);
+      setCurrentView("login");
+      setLoading(false);
+      setToast(null);
+    }
+  }, [isOpen]);
 
   // 모달이 열릴 때 body 스크롤 방지
   useEffect(() => {
@@ -81,12 +95,19 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setPendingMfaResolver(undefined); // Reset previous resolver
     try {
       await loginWithGoogle();
       handleLoginSuccess();
     } catch (error) {
-      console.error("Google login error:", error);
-      handleError("Google login failed. Please try again.");
+      const mfaResolver = getMfaResolver(error);
+      if (mfaResolver) {
+        setPendingMfaResolver(mfaResolver);
+        setCurrentView("login");
+      } else {
+        console.error("Google login error:", error);
+        handleError("Google login failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -128,6 +149,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose }) => {
               onSwitchToForgotPassword={() => setCurrentView("forgot-password")}
               onSuccess={handleLoginSuccess}
               onError={handleError}
+              initialResolver={pendingMfaResolver}
             />
           )}
 
@@ -193,7 +215,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 <FaGoogle />
                 {currentView === "login"
                   ? t("auth.googleLogin") || "Login with Google"
-                  : t("auth.googleSignup") || "Sign up with Google"}
+                  : t("auth.googleLogin") || "Login with Google"}
               </button>
             </>
           )}
