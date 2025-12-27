@@ -650,7 +650,7 @@ body {
   justify-content: center;
   z-index: 2000;
   animation: fadeIn 0.2s ease;
-  padding: 20px;
+  padding: 0;
   overflow-y: auto;
 }
 
