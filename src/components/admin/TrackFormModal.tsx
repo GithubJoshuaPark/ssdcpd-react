@@ -142,7 +142,11 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({
             {isEditMode ? "Edit Track" : "Add New Track"}
           </h2>
 
-          <form className="track-form" onSubmit={handleSubmit}>
+          <form
+            className="track-form"
+            onSubmit={handleSubmit}
+            style={{ maxWidth: "100%", overflowX: "hidden" }}
+          >
             {/* Title */}
             <div className="auth-form-group">
               <label htmlFor="track-title">Title *</label>
@@ -150,6 +154,11 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({
                 id="track-title"
                 type="text"
                 className="auth-input"
+                style={{
+                  width: "100%",
+                  maxWidth: "100%",
+                  boxSizing: "border-box",
+                }}
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 required
@@ -158,12 +167,17 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({
             </div>
 
             {/* Category and Level */}
-            <div className="track-form-row">
+            <div className="track-form-row" style={{ flexWrap: "wrap" }}>
               <div className="auth-form-group">
                 <label htmlFor="track-category">Category *</label>
                 <select
                   id="track-category"
                   className="auth-input"
+                  style={{
+                    width: "100%",
+                    maxWidth: "100%",
+                    boxSizing: "border-box",
+                  }}
                   value={category}
                   onChange={e => setCategory(e.target.value as TrackCategory)}
                   required
@@ -182,6 +196,11 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({
                   id="track-level"
                   type="text"
                   className="auth-input"
+                  style={{
+                    width: "100%",
+                    maxWidth: "100%",
+                    boxSizing: "border-box",
+                  }}
                   value={level}
                   onChange={e => setLevel(e.target.value)}
                   placeholder="e.g., Beginner, Advanced"
@@ -195,6 +214,11 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({
               <select
                 id="track-status"
                 className="auth-input"
+                style={{
+                  width: "100%",
+                  maxWidth: "100%",
+                  boxSizing: "border-box",
+                }}
                 value={status}
                 onChange={e => setStatus(e.target.value as TrackStatus)}
               >
@@ -235,6 +259,11 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({
                 id="track-url"
                 type="url"
                 className="auth-input"
+                style={{
+                  width: "100%",
+                  maxWidth: "100%",
+                  boxSizing: "border-box",
+                }}
                 value={url}
                 onChange={e => setUrl(e.target.value)}
                 placeholder="https://github.com/..."
@@ -248,6 +277,11 @@ export const TrackFormModal: FC<TrackFormModalProps> = ({
                 id="track-tags"
                 type="text"
                 className="auth-input"
+                style={{
+                  width: "100%",
+                  maxWidth: "100%",
+                  boxSizing: "border-box",
+                }}
                 value={tags}
                 onChange={e => setTags(e.target.value)}
                 placeholder="python, docker, linux"
