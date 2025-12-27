@@ -669,7 +669,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                         width: "100%",
                       }}
                     >
-                      {t("profile.changeNumber") || "Change Number"}
+                      {t("profile.changeNumber") || "Reset 2-MFA Verification"}
                     </button>
                   </div>
                 ) : (
@@ -682,7 +682,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                       }}
                     >
                       {t("profile.2faDescription") ||
-                        "Protect your account with SMS verification."}
+                        "SMS verification with mobile number"}
                     </p>
 
                     {mfaStep === "idle" ? (
@@ -735,7 +735,15 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                         className="auth-form-group"
                         style={{ marginBottom: 0 }}
                       >
-                        <div style={{ display: "flex", gap: "8px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            width: "100%",
+                            maxWidth: "100%",
+                            boxSizing: "border-box",
+                          }}
+                        >
                           <input
                             type="text"
                             placeholder="6-digit code"
@@ -746,7 +754,8 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                             }
                             maxLength={6}
                             style={{
-                              flex: 1,
+                              flex: 7,
+                              minWidth: 0,
                               textAlign: "center",
                               letterSpacing: "2px",
                             }}
@@ -756,8 +765,12 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                             className="auth-button"
                             onClick={handleEnrollMfa}
                             style={{
-                              padding: "0 20px",
-                              width: "auto",
+                              flex: 3,
+                              minWidth: 0,
+                              padding: "0",
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
                               margin: 0,
                               fontSize: "0.85rem",
                               whiteSpace: "nowrap",
@@ -777,7 +790,8 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                             width: "100%",
                           }}
                         >
-                          {t("profile.changeNumber") || "Change Number"}
+                          {t("profile.changeNumber") ||
+                            "Reset 2-MFA Verification"}
                         </button>
                       </div>
                     )}
