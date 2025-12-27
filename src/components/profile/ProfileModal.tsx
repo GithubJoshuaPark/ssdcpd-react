@@ -782,7 +782,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                         <div style={{ display: "flex", gap: "8px" }}>
                           <input
                             type="tel"
-                            placeholder="+821012345678"
+                            placeholder="+8210XXXXXXXX"
                             className="auth-input"
                             value={mfaPhoneNumber}
                             onChange={e => setMfaPhoneNumber(e.target.value)}
