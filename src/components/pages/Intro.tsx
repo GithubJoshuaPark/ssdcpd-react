@@ -7,9 +7,12 @@ import {
   FaAws,
   FaDatabase,
   FaDocker,
+  FaEnvelope,
   FaGitAlt,
+  FaGraduationCap,
   FaJava,
   FaNodeJs,
+  FaProjectDiagram,
   FaReact,
   FaSwift,
 } from "react-icons/fa";
@@ -88,22 +91,22 @@ export const Intro: FC = () => {
             <h3>Langs</h3>
             <div className="skill-items">
               <div className="skill-item">
-                <AiOutlineCode /> C/C++/C#
+                <AiOutlineCode color="#9ca3af" /> C/C++/C#
               </div>
               <div className="skill-item">
-                <FaJava /> Java
+                <FaJava color="#f89820" /> Java
               </div>
               <div className="skill-item">
-                <SiPython /> Python
+                <SiPython color="#3776AB" /> Python
               </div>
               <div className="skill-item">
-                <FaSwift /> Swift
+                <FaSwift color="#F05138" /> Swift
               </div>
               <div className="skill-item">
-                <SiSwift /> SwiftUI
+                <SiSwift color="#007AFF" /> SwiftUI
               </div>
               <div className="skill-item">
-                <SiKotlin /> Kotlin
+                <SiKotlin color="#7F52FF" /> Kotlin
               </div>
             </div>
           </div>
@@ -113,10 +116,10 @@ export const Intro: FC = () => {
             <h3>Native</h3>
             <div className="skill-items single-col">
               <div className="skill-item">
-                <FaApple /> xCode
+                <FaApple color="#ffffff" /> xCode
               </div>
               <div className="skill-item">
-                <SiAndroidstudio /> Android Studio
+                <SiAndroidstudio color="#3DDC84" /> Android Studio
               </div>
             </div>
           </div>
@@ -126,19 +129,19 @@ export const Intro: FC = () => {
             <h3>Frontend</h3>
             <div className="skill-items single-col">
               <div className="skill-item">
-                <SiJavascript /> JavaScript
+                <SiJavascript color="#F7DF1E" /> JavaScript
               </div>
               <div className="skill-item">
-                <SiTypescript /> TypeScript
+                <SiTypescript color="#3178C6" /> TypeScript
               </div>
               <div className="skill-item">
-                <FaReact /> React
+                <FaReact color="#61DAFB" /> React
               </div>
               <div className="skill-item">
-                <FaAngular /> Angular
+                <FaAngular color="#DD0031" /> Angular
               </div>
               <div className="skill-item">
-                <SiTailwindcss /> Tailwind
+                <SiTailwindcss color="#06B6D4" /> Tailwind
               </div>
             </div>
           </div>
@@ -148,22 +151,22 @@ export const Intro: FC = () => {
             <h3>Backend</h3>
             <div className="skill-items">
               <div className="skill-item">
-                <FaNodeJs /> Node.js
+                <FaNodeJs color="#339933" /> Node.js
               </div>
               <div className="skill-item">
-                <SiExpress /> Express
+                <SiExpress color="#ffffff" /> Express
               </div>
               <div className="skill-item">
-                <SiSpringboot /> SpringBoot
+                <SiSpringboot color="#6DB33F" /> SpringBoot
               </div>
               <div className="skill-item">
-                <SiFirebase /> Firebase
+                <SiFirebase color="#FFCA28" /> Firebase
               </div>
               <div className="skill-item">
-                <SiSupabase /> Supabase
+                <SiSupabase color="#3ECF8E" /> Supabase
               </div>
               <div className="skill-item">
-                <FaDatabase /> RDBMS
+                <FaDatabase color="#60A5FA" /> RDBMS
               </div>
             </div>
           </div>
@@ -173,31 +176,118 @@ export const Intro: FC = () => {
             <h3>Tools</h3>
             <div className="skill-items single-col">
               <div className="skill-item">
-                <FaGitAlt /> Git
+                <FaGitAlt color="#F05032" /> Git
               </div>
               <div className="skill-item">
-                <FaDocker /> Docker
+                <FaDocker color="#2496ED" /> Docker
               </div>
               <div className="skill-item">
-                <FaAws /> AWS
+                <FaAws color="#FF9900" /> AWS
               </div>
               <div className="skill-item">
-                <VscSettingsGear /> CI/CD
+                <VscSettingsGear color="#9ca3af" /> CI/CD
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="intro-actions">
+      <div
+        className="intro-actions"
+        style={{
+          display: "flex",
+          gap: "20px",
+          marginTop: "40px",
+          justifyContent: "center",
+          flexWrap: "wrap",
+        }}
+      >
         <button
           className="primary-btn contact-btn"
           onClick={handleContactClick}
+          style={{
+            padding: "12px 32px",
+            fontSize: "1.1rem",
+            fontWeight: "600",
+            borderRadius: "30px",
+            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+            boxShadow: "0 8px 20px rgba(59, 130, 246, 0.3)",
+            border: "none",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            cursor: "pointer",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          }}
+          onMouseEnter={e =>
+            (e.currentTarget.style.transform = "translateY(-3px)")
+          }
+          onMouseLeave={e =>
+            (e.currentTarget.style.transform = "translateY(0)")
+          }
         >
-          Contact Me
+          <FaEnvelope /> Contact
         </button>
-        <Link to="/projects" className="secondary-btn view-projects-btn">
-          View Projects
+
+        <Link
+          to="/cpd"
+          className="secondary-btn"
+          style={{
+            padding: "12px 32px",
+            fontSize: "1.1rem",
+            fontWeight: "600",
+            borderRadius: "30px",
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            textDecoration: "none",
+            backdropFilter: "blur(10px)",
+            transition: "transform 0.2s ease, background 0.2s ease",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+          }}
+        >
+          <FaGraduationCap /> CPD
+        </Link>
+
+        <Link
+          to="/projects"
+          className="secondary-btn"
+          style={{
+            padding: "12px 32px",
+            fontSize: "1.1rem",
+            fontWeight: "600",
+            borderRadius: "30px",
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            textDecoration: "none",
+            backdropFilter: "blur(10px)",
+            transition: "transform 0.2s ease, background 0.2s ease",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+          }}
+        >
+          <FaProjectDiagram /> Projects
         </Link>
       </div>
 
