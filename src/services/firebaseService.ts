@@ -57,7 +57,7 @@ import type { Project } from "../types_interfaces/project";
 import type { Track } from "../types_interfaces/track";
 import type { TranslationsByLang } from "../types_interfaces/translations";
 import type { UserProfile } from "../types_interfaces/userProfile";
-import type { WbsItem } from "../types_interfaces/wbs";
+import type { DailyReport, WbsItem } from "../types_interfaces/wbs";
 
 // ----- Firebase 초기화 -----
 
@@ -596,7 +596,7 @@ export async function deleteUserByAdminFunction(
 }
 
 /**
- * 관리자가 Cloud Function을 통해 답변 이메일 발송
+ * 관리자가 Cloud Function을 통해 이메일 발송
  */
 export async function sendEmailByAdminFunction(
   to: string | string[],
@@ -1115,6 +1115,88 @@ export function getMfaResolver(error: unknown): MultiFactorResolver | null {
     return getMultiFactorResolver(auth, error as MultiFactorError);
   }
   return null;
+}
+
+// ----- Daily Report Functions -----
+
+/**
+ * Subscribe to Daily Reports for a specific Task
+ */
+export async function subscribeDailyReports(
+  taskId: string,
+  onUpdate: (reports: DailyReport[]) => void
+): Promise<() => void> {
+  const { onValue, query, orderByChild, equalTo, off } = await import(
+    "firebase/database"
+  );
+  const reportsRef = ref(database, "daily_report");
+  const q = query(reportsRef, orderByChild("wbsId"), equalTo(taskId));
+
+  const callback = (snapshot: DataSnapshot) => {
+    if (!snapshot.exists()) {
+      onUpdate([]);
+      return;
+    }
+    const data = snapshot.val();
+    const list = Object.entries(data).map(([id, val]) => ({
+      id,
+      ...(val as Record<string, unknown>),
+    })) as DailyReport[];
+    // Sort by date descending
+    onUpdate(
+      list.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
+    );
+  };
+
+  onValue(q, callback);
+
+  // Return unsubscribe function
+  return () => off(q, "value", callback);
+}
+
+/**
+ * Create a Daily Report
+ */
+export async function createDailyReport(
+  report: Omit<DailyReport, "id">
+): Promise<string> {
+  const { push, set } = await import("firebase/database");
+  const reportsRef = ref(database, "daily_report");
+  const newRef = push(reportsRef);
+
+  if (!newRef.key) {
+    throw new Error("Failed to generate report ID");
+  }
+
+  await set(newRef, report);
+  return newRef.key;
+}
+
+/**
+ * Update a Daily Report
+ */
+export async function updateDailyReport(
+  id: string,
+  updates: Partial<DailyReport>
+): Promise<void> {
+  const { update } = await import("firebase/database");
+  const reportRef = ref(database, `daily_report/${id}`);
+
+  const updateData = { ...updates };
+  delete updateData.id; // Ensure ID is not updated
+
+  await update(reportRef, updateData);
+}
+
+/**
+ * Delete a Daily Report
+ */
+export async function deleteDailyReport(id: string): Promise<void> {
+  const { remove } = await import("firebase/database");
+  const reportRef = ref(database, `daily_report/${id}`);
+  await remove(reportRef);
 }
 
 export { auth, database, firestore, storage };

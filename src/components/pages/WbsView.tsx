@@ -17,20 +17,30 @@ import {
   deleteWbsItem,
   getProjectById,
   getWbsItemsByProject,
+  sendEmailByAdminFunction,
   updateWbsItem,
 } from "../../services/firebaseService";
 import type { Project } from "../../types_interfaces/project";
+import type { UserProfile } from "../../types_interfaces/userProfile";
 import type { WbsItem } from "../../types_interfaces/wbs";
 import { ConfirmDialog } from "../common/ConfirmDialog";
+import DownloadDataWithExcelOrCsv from "../common/DownloadDataWithExcelOrCsv";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 import { RichEditor } from "../common/RichEditor";
 import { Toast } from "../common/Toast";
+import { UserPopup } from "../popups/UserPopup";
+import { ProjectDailyReportsPerTask } from "./ProjectDailyReportsPerTask";
 
 const stripHtml = (html: string) => {
   if (!html) return "";
   const tmp = document.createElement("DIV");
   tmp.innerHTML = html;
   return tmp.textContent || "";
+};
+
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return "";
+  return dateStr.replace(/-/g, "/");
 };
 
 export const WbsView: FC = () => {
@@ -52,6 +62,16 @@ export const WbsView: FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+
+  const [ccAssigneeInput, setCcAssigneeInput] = useState("");
+  const [isUserPopupOpen, setIsUserPopupOpen] = useState(false);
+  const [userPopupMode, setUserPopupMode] = useState<"single" | "multiple">(
+    "single"
+  );
+  const [userPopupTarget, setUserPopupTarget] = useState<"assignee" | "cc">(
+    "assignee"
+  );
 
   const [formData, setFormData] = useState<
     Omit<WbsItem, "id" | "projectId" | "createdAt" | "updatedAt">
@@ -118,18 +138,139 @@ export const WbsView: FC = () => {
       if (editingItem) {
         await updateWbsItem(projectId, editingItem.id!, {
           ...formData,
+          cc_assignee: ccAssigneeInput
+            .split(",")
+            .map(s => s.trim())
+            .filter(Boolean),
           updatedAt: now,
         });
         setToast({ message: "Task updated successfully!", type: "success" });
       } else {
         await createWbsItem({
           ...formData,
+          cc_assignee: ccAssigneeInput
+            .split(",")
+            .map(s => s.trim())
+            .filter(Boolean),
           projectId,
           createdAt: now,
           updatedAt: now,
         });
         setToast({ message: "Task added successfully!", type: "success" });
       }
+
+      // Send Email Notification
+      const extractEmail = (text: string) => {
+        const match = text.match(/\(([^)]+)\)/);
+        return match ? match[1] : text.trim();
+      };
+
+      const recipients = new Set<string>();
+      if (formData.assignee) recipients.add(extractEmail(formData.assignee));
+
+      const ccList = ccAssigneeInput
+        .split(",")
+        .map(s => s.trim())
+        .filter(Boolean);
+      ccList.forEach(cc => recipients.add(extractEmail(cc)));
+
+      if (recipients.size > 0) {
+        // Non-blocking email send (or await if intended to block UI)
+        // User said "before resetForm", so we await to ensure it tries to send.
+        // But to keep UI responsive, we might just fire and forget, OR await with catch.
+        // User request implies "make sure to send".
+        try {
+          await sendEmailByAdminFunction(
+            Array.from(recipients),
+            `[Task Notification] ${formData.taskName}`,
+            `Task Update in Project: ${
+              project?.projectName || "Unknown Project"
+            }\n\n` +
+              `Task Name: ${formData.taskName}\n` +
+              `Status: ${formData.status}\n` +
+              `Dates: ${formData.startDate} ~ ${formData.endDate}\n` +
+              `Progress: ${formData.progress}%\n\n` +
+              `Description:\n${
+                formData.description?.replace(/<[^>]+>/g, " ") || "-"
+              }`,
+            `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px;">
+              <h2 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 20px;">
+                Task Notification
+              </h2>
+              <p>Hello,</p>
+              <p>There has been an update to the following task in project <strong>${
+                project?.projectName || "Unknown Project"
+              }</strong>.</p>
+              
+              <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
+                <tr style="background-color: #f8f9fa;">
+                  <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; width: 30%;">Task Name</td>
+                  <td style="padding: 10px; border: 1px solid #ddd;">${
+                    formData.taskName
+                  }</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Status</td>
+                  <td style="padding: 10px; border: 1px solid #ddd;">
+                    <span style="
+                      background-color: ${
+                        formData.status === "in-progress"
+                          ? "#3b82f6"
+                          : formData.status === "done"
+                          ? "#10b981"
+                          : formData.status === "on-hold"
+                          ? "#ef4444"
+                          : "#9ca3af" // todo
+                      };
+                      color: white;
+                      padding: 4px 8px;
+                      border-radius: 4px;
+                      font-size: 12px;
+                      text-transform: uppercase;
+                      font-weight: bold;
+                    ">
+                      ${formData.status}
+                    </span>
+                  </td>
+                </tr>
+                <tr style="background-color: #f8f9fa;">
+                  <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Dates</td>
+                  <td style="padding: 10px; border: 1px solid #ddd;">
+                    ${formData.startDate} ~ ${formData.endDate}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Progress</td>
+                  <td style="padding: 10px; border: 1px solid #ddd;">
+                    <div style="width: 100%; background-color: #eee; border-radius: 10px; height: 10px; overflow: hidden;">
+                      <div style="width: ${
+                        formData.progress
+                      }%; background-color: #3b82f6; height: 100%;"></div>
+                    </div>
+                    <div style="font-size: 12px; margin-top: 4px;">${
+                      formData.progress
+                    }%</div>
+                  </td>
+                </tr>
+              </table>
+
+              <div style="margin-top: 25px;">
+                <h3 style="font-size: 16px; color: #555; border-left: 4px solid #3b82f6; padding-left: 10px;">Description</h3>
+                <div style="padding: 15px; background-color: #f9f9f9; border: 1px solid #eee; border-radius: 4px;">
+                  ${formData.description || "No description provided."}
+                </div>
+              </div>
+
+              <p style="margin-top: 30px; font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 10px;">
+                This is an automated message from <strong>SSDCPD</strong> System.
+              </p>
+            </div>`
+          );
+        } catch (emailErr) {
+          console.error("Failed to send email notification:", emailErr);
+        }
+      }
+
       resetForm();
       loadData();
       setActiveTab("list");
@@ -146,6 +287,7 @@ export const WbsView: FC = () => {
       wbsItems.length > 0 ? Math.max(...wbsItems.map(i => i.order || 0)) : 0;
 
     setEditingItem(null);
+    setCcAssigneeInput("");
     setFormData({
       taskName: "",
       description: "",
@@ -161,6 +303,7 @@ export const WbsView: FC = () => {
   const handleEdit = (item: WbsItem) => {
     if (!isAdmin) return;
     setEditingItem(item);
+    setCcAssigneeInput(item.cc_assignee?.join(", ") || "");
 
     setFormData({
       taskName: item.taskName,
@@ -212,6 +355,18 @@ export const WbsView: FC = () => {
         return "#ef4444";
       default:
         return "#9ca3af";
+    }
+  };
+
+  const handlePopupSelect = (selectedUsers: UserProfile[]) => {
+    if (userPopupTarget === "assignee") {
+      if (selectedUsers.length > 0) {
+        const u = selectedUsers[0];
+        setFormData(prev => ({ ...prev, assignee: `${u.name} (${u.email})` }));
+      }
+    } else {
+      const text = selectedUsers.map(u => `${u.name} (${u.email})`).join(", ");
+      setCcAssigneeInput(text);
     }
   };
 
@@ -354,14 +509,8 @@ export const WbsView: FC = () => {
           </h2>
 
           <form onSubmit={handleSubmit} className="auth-form">
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                gap: "20px",
-              }}
-            >
-              <div className="auth-form-group">
+            <div className="wbs-form-grid">
+              <div className="auth-form-group wbs-col-span-2">
                 <label>Task Name</label>
                 <input
                   type="text"
@@ -374,8 +523,65 @@ export const WbsView: FC = () => {
                 />
               </div>
               <div className="auth-form-group">
+                <label>Assignee</label>
+                <input
+                  type="text"
+                  name="assignee"
+                  value={formData.assignee}
+                  onClick={() => {
+                    setUserPopupMode("single");
+                    setUserPopupTarget("assignee");
+                    setIsUserPopupOpen(true);
+                  }}
+                  readOnly
+                  className="auth-input"
+                  style={{ cursor: "pointer" }}
+                  placeholder="Click to select user"
+                />
+              </div>
+              <div className="auth-form-group">
+                <label>CC Assignee</label>
+                <input
+                  type="text"
+                  value={ccAssigneeInput}
+                  onClick={() => {
+                    setUserPopupMode("multiple");
+                    setUserPopupTarget("cc");
+                    setIsUserPopupOpen(true);
+                  }}
+                  readOnly
+                  className="auth-input"
+                  style={{ cursor: "pointer" }}
+                  placeholder="Click to select users"
+                />
+              </div>
+              <div className="auth-form-group wbs-col-span-2">
+                <label>Start Date</label>
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  data-value={formatDate(formData.startDate)}
+                  onChange={handleInputChange}
+                  className="auth-input custom-date-visual"
+                  required
+                />
+              </div>
+              <div className="auth-form-group wbs-col-span-2">
+                <label>End Date</label>
+                <input
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  data-value={formatDate(formData.endDate)}
+                  onChange={handleInputChange}
+                  className="auth-input custom-date-visual"
+                  required
+                />
+              </div>
+              <div className="auth-form-group wbs-col-full">
                 <label>Description</label>
-                <div style={{ gridColumn: "span 1" }}>
+                <div>
                   <RichEditor
                     value={formData.description || ""}
                     onChange={val =>
@@ -385,39 +591,6 @@ export const WbsView: FC = () => {
                     minHeight="80px"
                   />
                 </div>
-              </div>
-              <div className="auth-form-group">
-                <label>Assignee</label>
-                <input
-                  type="text"
-                  name="assignee"
-                  value={formData.assignee}
-                  onChange={handleInputChange}
-                  className="auth-input"
-                  placeholder="Who is responsible?"
-                />
-              </div>
-              <div className="auth-form-group">
-                <label>Start Date</label>
-                <input
-                  type="date"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleInputChange}
-                  className="auth-input"
-                  required
-                />
-              </div>
-              <div className="auth-form-group">
-                <label>End Date</label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleInputChange}
-                  className="auth-input"
-                  required
-                />
               </div>
               <div className="auth-form-group">
                 <label>Status</label>
@@ -445,7 +618,7 @@ export const WbsView: FC = () => {
                   min="0"
                 />
               </div>
-              <div className="auth-form-group">
+              <div className="auth-form-group wbs-col-span-2">
                 <label>Progress ({formData.progress}%)</label>
 
                 <input
@@ -460,7 +633,7 @@ export const WbsView: FC = () => {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: "12px", marginTop: "30px" }}>
+            <div className="wbs-form-actions">
               <button
                 type="submit"
                 className="primary-btn"
@@ -468,11 +641,11 @@ export const WbsView: FC = () => {
               >
                 {editingItem ? (
                   <>
-                    <FaSave /> Update Task
+                    <FaSave /> Update
                   </>
                 ) : (
                   <>
-                    <FaPlus /> Add Task
+                    <FaPlus /> Add
                   </>
                 )}
               </button>
@@ -499,6 +672,20 @@ export const WbsView: FC = () => {
         </section>
       )}
 
+      {isAdmin && activeTab === "form" && editingItem && projectId && (
+        <section
+          className="card"
+          style={{ padding: "30px", marginBottom: "40px" }}
+        >
+          <ProjectDailyReportsPerTask
+            projectId={projectId}
+            taskId={editingItem.id!}
+            taskName={editingItem.taskName}
+            wbsItem={editingItem}
+          />
+        </section>
+      )}
+
       {(!isAdmin || activeTab === "list") && (
         <section className="card" style={{ padding: "0", overflow: "hidden" }}>
           <div
@@ -506,7 +693,7 @@ export const WbsView: FC = () => {
               padding: "20px 24px",
               borderBottom: "1px solid var(--card-border)",
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent: "flex-start",
               alignItems: "center",
               flexWrap: "wrap",
               gap: "16px",
@@ -541,6 +728,23 @@ export const WbsView: FC = () => {
                 }}
               />
             </div>
+            {isAdmin && (
+              <button
+                className="auth-button"
+                style={{
+                  width: "auto",
+                  padding: "6px 15px",
+                  fontSize: "0.9rem",
+                  marginBottom: 0,
+                  backgroundColor: "var(--card-bg)",
+                  border: "1px solid var(--accent)",
+                  whiteSpace: "nowrap",
+                }}
+                onClick={() => setIsDownloadOpen(true)}
+              >
+                Export
+              </button>
+            )}
           </div>
 
           {/* Desktop Table View */}
@@ -699,9 +903,9 @@ export const WbsView: FC = () => {
                         {item.assignee || "-"}
                       </td>
                       <td style={{ padding: "16px 24px", fontSize: "0.85rem" }}>
-                        <div>{item.startDate}</div>
+                        <div>{formatDate(item.startDate)}</div>
                         <div style={{ color: "var(--text-muted)" }}>
-                          {item.endDate}
+                          {formatDate(item.endDate)}
                         </div>
                       </td>
                       <td style={{ padding: "16px 24px" }}>
@@ -821,24 +1025,18 @@ export const WbsView: FC = () => {
                       {item.description && (
                         <div
                           style={{
+                            marginTop: "8px",
                             fontSize: "0.85rem",
                             color: "var(--text-muted)",
-                            marginTop: "4px",
-                            lineHeight: "1.4",
                           }}
                         >
-                          {stripHtml(item.description)}
+                          <RichEditor
+                            value={item.description}
+                            readOnly={true}
+                            minHeight="auto"
+                          />
                         </div>
                       )}
-                      <div
-                        style={{
-                          fontSize: "0.85rem",
-                          color: "var(--text-muted)",
-                          marginTop: "8px",
-                        }}
-                      >
-                        Order: {item.order} | {item.assignee || "Unassigned"}
-                      </div>
                     </div>
                     <span
                       style={{
@@ -865,8 +1063,8 @@ export const WbsView: FC = () => {
                       color: "var(--text-muted)",
                     }}
                   >
-                    <span>📅 {item.startDate}</span>
-                    <span>🏁 {item.endDate}</span>
+                    <span>📅 {formatDate(item.startDate)}</span>
+                    <span>🏁 {formatDate(item.endDate)}</span>
                   </div>
 
                   <div
@@ -973,12 +1171,90 @@ export const WbsView: FC = () => {
 
       {processing && <LoadingSpinner />}
 
+      <DownloadDataWithExcelOrCsv
+        isOpen={isDownloadOpen}
+        onClose={() => setIsDownloadOpen(false)}
+        data={filteredItems.map(item => ({
+          ...item,
+          description: stripHtml(item.description || ""),
+          startDate: formatDate(item.startDate),
+          endDate: formatDate(item.endDate),
+        }))}
+        headers={[
+          { key: "order", label: "Order" },
+          { key: "taskName", label: "Task" },
+          { key: "description", label: "Description" },
+          { key: "assignee", label: "Assignee" },
+          { key: "startDate", label: "Start Date" },
+          { key: "endDate", label: "End Date" },
+          { key: "status", label: "Status" },
+          { key: "progress", label: "Progress (%)" },
+        ]}
+        fileName={`wbs_${project?.projectName || "project"}`}
+      />
+
       <style>{`
+        .wbs-form-actions {
+          display: flex;
+          gap: 12px;
+          margin-top: 30px;
+          justify-content: flex-end;
+        }
+        @media (max-width: 768px) {
+          .wbs-form-actions {
+            justify-content: center;
+          }
+        }
+
+        .wbs-form-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        @media (min-width: 1024px) {
+           .wbs-form-grid {
+             grid-template-columns: repeat(4, 1fr);
+           }
+           .wbs-col-full {
+             grid-column: 1 / -1;
+           }
+           .wbs-col-span-2 {
+             grid-column: span 2;
+           }
+        }
+
+        .custom-date-visual {
+          position: relative;
+        }
+        .custom-date-visual:not([data-value=""]):not(:focus)::-webkit-datetime-edit {
+          color: transparent;
+        }
+        .custom-date-visual:not([data-value=""]):not(:focus)::after {
+          content: attr(data-value);
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: inherit;
+          pointer-events: none;
+          font-size: 0.95rem;
+        }
 
         .table-row-hover:hover {
           background: rgba(255,255,255,0.02);
         }
       `}</style>
+      <UserPopup
+        isOpen={isUserPopupOpen}
+        onClose={() => setIsUserPopupOpen(false)}
+        onSelect={handlePopupSelect}
+        selectionMode={userPopupMode}
+        title={
+          userPopupTarget === "assignee"
+            ? "Select Assignee"
+            : "Select CC Assignees"
+        }
+      />
     </div>
   );
 };

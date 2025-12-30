@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
@@ -8,18 +8,17 @@ import {
   createProject,
   deleteProject,
   getAllProjects,
-  getAllUserProfiles,
   updateProject,
   uploadProjectImage,
 } from "../../services/firebaseService";
 import type { Project } from "../../types_interfaces/project";
-import type { UserProfile } from "../../types_interfaces/userProfile";
 
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import DownloadDataWithExcelOrCsv from "../common/DownloadDataWithExcelOrCsv";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 import { RichEditor } from "../common/RichEditor";
 import { Toast } from "../common/Toast";
+import { UserPopup } from "../popups/UserPopup";
 
 interface ProjectsModalProps {
   isOpen: boolean;
@@ -53,10 +52,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
     imageUrl: "",
   });
   const [skillInput, setSkillInput] = useState("");
-  const [shareholderInput, setShareholderInput] = useState("");
-  const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isUserPopupOpen, setIsUserPopupOpen] = useState(false);
 
   const [toast, setToast] = useState<{
     message: string;
@@ -84,42 +80,17 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
     }
   }, []);
 
-  const loadUserProfiles = useCallback(async () => {
-    try {
-      const data = await getAllUserProfiles();
-      setUserProfiles(data);
-    } catch (error) {
-      console.error("Error loading user profiles:", error);
-    }
-  }, []);
-
   useEffect(() => {
     if (isOpen) {
       resetForm();
       loadProjects();
-      loadUserProfiles();
     }
-  }, [isOpen, loadProjects, loadUserProfiles]);
+  }, [isOpen, loadProjects]);
 
   // Reset to page 1 when search or itemsPerPage changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, itemsPerPage]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowUserDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -161,17 +132,6 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
       ...prev,
       usedSkills: prev.usedSkills.filter(s => s !== skill),
     }));
-  };
-
-  const handleAddShareholder = () => {
-    if (!shareholderInput.trim()) return;
-    if (!(formData.shareholders || []).includes(shareholderInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        shareholders: [...(prev.shareholders || []), shareholderInput.trim()],
-      }));
-    }
-    setShareholderInput("");
   };
 
   const handleRemoveShareholder = (shareholder: string) => {
@@ -233,7 +193,6 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
       imageUrl: "",
     });
     setSkillInput("");
-    setShareholderInput("");
     setMobileTab("list");
   };
 
@@ -352,6 +311,24 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                   margin-bottom: 12px;
                 }
               }
+
+              /* Custom Date Input Styling for YYYY/MM/DD */
+              .custom-date-visual {
+                position: relative;
+              }
+              .custom-date-visual:not([data-value=""]):not(:focus)::-webkit-datetime-edit {
+                color: transparent;
+              }
+              .custom-date-visual:not([data-value=""]):not(:focus)::after {
+                content: attr(data-value);
+                position: absolute;
+                left: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: inherit;
+                pointer-events: none;
+                font-size: 0.95rem;
+              }
             `}
           </style>
 
@@ -446,7 +423,12 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       name="startDate"
                       value={formData.startDate}
                       onChange={handleChange}
-                      className="auth-input"
+                      className="auth-input custom-date-visual"
+                      data-value={
+                        formData.startDate
+                          ? formData.startDate.replace(/-/g, "/")
+                          : ""
+                      }
                       style={{
                         width: "90%",
                         maxWidth: "90%",
@@ -465,7 +447,12 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                       name="endDate"
                       value={formData.endDate}
                       onChange={handleChange}
-                      className="auth-input"
+                      className="auth-input custom-date-visual"
+                      data-value={
+                        formData.endDate
+                          ? formData.endDate.replace(/-/g, "/")
+                          : ""
+                      }
                       style={{
                         width: "90%",
                         maxWidth: "90%",
@@ -575,120 +562,21 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                   >
                     <input
                       type="text"
-                      value={shareholderInput}
-                      onChange={e => {
-                        setShareholderInput(e.target.value);
-                        setShowUserDropdown(true);
-                      }}
-                      onFocus={() => setShowUserDropdown(true)}
+                      readOnly
+                      placeholder="Click to select shareholders..."
+                      onClick={() => setIsUserPopupOpen(true)}
                       className="auth-input"
-                      style={{ flex: 1, minWidth: 0 }}
-                      placeholder="Search by name or email..."
-                      onKeyDown={e => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleAddShareholder();
-                        }
-                      }}
+                      style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
                     />
                     <button
                       type="button"
-                      onClick={handleAddShareholder}
+                      onClick={() => setIsUserPopupOpen(true)}
                       className="auth-button"
                       style={{ padding: "8px 16px" }}
                     >
-                      Add
+                      Select
                     </button>
                   </div>
-
-                  {/* User Dropdown */}
-                  {showUserDropdown && shareholderInput.trim() !== "" && (
-                    <div
-                      ref={dropdownRef}
-                      style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        right: 0,
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                        backgroundColor: "var(--card-bg)",
-                        border: "1px solid var(--card-border)",
-                        borderRadius: "8px",
-                        zIndex: 100,
-                        boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-                        marginTop: "4px",
-                      }}
-                    >
-                      {userProfiles
-                        .filter(user => {
-                          const search = shareholderInput.toLowerCase();
-                          return (
-                            (user.name || "").toLowerCase().includes(search) ||
-                            user.email.toLowerCase().includes(search)
-                          );
-                        })
-                        .map(user => (
-                          <div
-                            key={user.uid}
-                            onClick={() => {
-                              if (
-                                !(formData.shareholders || []).includes(
-                                  user.email
-                                )
-                              ) {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  shareholders: [
-                                    ...(prev.shareholders || []),
-                                    user.email,
-                                  ],
-                                }));
-                              }
-                              setShareholderInput("");
-                              setShowUserDropdown(false);
-                            }}
-                            style={{
-                              padding: "10px 15px",
-                              cursor: "pointer",
-                              borderBottom: "1px solid var(--card-border)",
-                              transition: "background 0.2s",
-                            }}
-                            className="user-selection-item"
-                            onMouseEnter={e =>
-                              (e.currentTarget.style.backgroundColor =
-                                "rgba(255,255,255,0.05)")
-                            }
-                            onMouseLeave={e =>
-                              (e.currentTarget.style.backgroundColor =
-                                "transparent")
-                            }
-                          >
-                            <div
-                              style={{ fontWeight: "600", fontSize: "0.9rem" }}
-                            >
-                              {user.name || "Unknown User"}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "0.8rem",
-                                color: "var(--accent)",
-                              }}
-                            >
-                              {user.email}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "0.7rem",
-                                color: "var(--text-muted)",
-                              }}
-                            >
-                              UID: {user.uid}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
 
                   <div
                     style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}
@@ -1138,6 +1026,20 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
           { key: "shareholders", label: "Shareholders" },
         ]}
         fileName="projects_list"
+      />
+      <UserPopup
+        isOpen={isUserPopupOpen}
+        onClose={() => setIsUserPopupOpen(false)}
+        selectionMode="multiple"
+        title="Select Shareholders"
+        onSelect={selectedUsers => {
+          const newEmails = selectedUsers.map(u => u.email).filter(Boolean);
+          setFormData(prev => {
+            const current = new Set(prev.shareholders || []);
+            newEmails.forEach(e => current.add(e));
+            return { ...prev, shareholders: Array.from(current) };
+          });
+        }}
       />
     </div>
   );
