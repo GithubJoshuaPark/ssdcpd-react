@@ -136,8 +136,11 @@ export const WbsView: FC = () => {
     try {
       const now = new Date().toISOString();
       if (editingItem) {
+        // Exclude 'order' from update to preserve existing order
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { order, ...rest } = formData;
         await updateWbsItem(projectId, editingItem.id!, {
-          ...formData,
+          ...rest,
           cc_assignee: ccAssigneeInput
             .split(",")
             .map(s => s.trim())
@@ -524,36 +527,87 @@ export const WbsView: FC = () => {
               </div>
               <div className="auth-form-group">
                 <label>Assignee</label>
-                <input
-                  type="text"
-                  name="assignee"
-                  value={formData.assignee}
-                  onClick={() => {
-                    setUserPopupMode("single");
-                    setUserPopupTarget("assignee");
-                    setIsUserPopupOpen(true);
-                  }}
-                  readOnly
-                  className="auth-input"
-                  style={{ cursor: "pointer" }}
-                  placeholder="Click to select user"
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="text"
+                    name="assignee"
+                    value={formData.assignee}
+                    onClick={() => {
+                      setUserPopupMode("single");
+                      setUserPopupTarget("assignee");
+                      setIsUserPopupOpen(true);
+                    }}
+                    readOnly
+                    className="auth-input"
+                    style={{ cursor: "pointer", paddingRight: "30px" }}
+                    placeholder="Click to select user"
+                  />
+                  {formData.assignee && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assignee: "" })}
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        color: "var(--text-muted)",
+                        cursor: "pointer",
+                        fontSize: "1.2rem",
+                        padding: 0,
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="auth-form-group">
                 <label>CC Assignee</label>
-                <input
-                  type="text"
-                  value={ccAssigneeInput}
-                  onClick={() => {
-                    setUserPopupMode("multiple");
-                    setUserPopupTarget("cc");
-                    setIsUserPopupOpen(true);
-                  }}
-                  readOnly
-                  className="auth-input"
-                  style={{ cursor: "pointer" }}
-                  placeholder="Click to select users"
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="text"
+                    value={ccAssigneeInput}
+                    onClick={() => {
+                      setUserPopupMode("multiple");
+                      setUserPopupTarget("cc");
+                      setIsUserPopupOpen(true);
+                    }}
+                    readOnly
+                    className="auth-input"
+                    style={{ cursor: "pointer", paddingRight: "30px" }}
+                    placeholder="Click to select users"
+                  />
+                  {ccAssigneeInput && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCcAssigneeInput("");
+                        setFormData({ ...formData, cc_assignee: [] });
+                      }}
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        color: "var(--text-muted)",
+                        cursor: "pointer",
+                        fontSize: "1.2rem",
+                        padding: 0,
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="auth-form-group wbs-col-span-2">
                 <label>Start Date</label>
