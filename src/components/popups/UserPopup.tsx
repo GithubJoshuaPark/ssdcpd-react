@@ -261,17 +261,63 @@ export const UserPopup: FC<UserPopupProps> = ({
                       transition: "all 0.2s",
                     }}
                   >
-                    <div>
-                      <div style={{ fontWeight: "600", fontSize: "0.95rem" }}>
-                        {user.name || "Unknown"}
-                      </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
                       <div
                         style={{
-                          fontSize: "0.85rem",
-                          color: "var(--text-muted, #888)",
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "50%",
+                          overflow: "hidden",
+                          flexShrink: 0,
+                          backgroundColor: user.photoURL
+                            ? "transparent"
+                            : "rgba(255, 255, 255, 0.1)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "1px solid rgba(255,255,255,0.1)",
                         }}
                       >
-                        {user.email}
+                        {user.photoURL ? (
+                          <img
+                            src={user.photoURL}
+                            alt={user.name || "User"}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <span
+                            style={{
+                              fontSize: "0.9rem",
+                              color: "#e5e7eb",
+                              fontWeight: "600",
+                            }}
+                          >
+                            {(user.email || "U").charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: "600", fontSize: "0.95rem" }}>
+                          {user.name || "Unknown"}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "0.85rem",
+                            color: "var(--text-muted, #888)",
+                          }}
+                        >
+                          {user.email}
+                        </div>
                       </div>
                     </div>
                     {isSelected && <FaCheck color="var(--accent, #3b82f6)" />}
