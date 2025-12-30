@@ -23,7 +23,15 @@ import type { Project } from "../../types_interfaces/project";
 import type { WbsItem } from "../../types_interfaces/wbs";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { LoadingSpinner } from "../common/LoadingSpinner";
+import { RichEditor } from "../common/RichEditor";
 import { Toast } from "../common/Toast";
+
+const stripHtml = (html: string) => {
+  if (!html) return "";
+  const tmp = document.createElement("DIV");
+  tmp.innerHTML = html;
+  return tmp.textContent || "";
+};
 
 export const WbsView: FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -367,14 +375,16 @@ export const WbsView: FC = () => {
               </div>
               <div className="auth-form-group">
                 <label>Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="auth-input"
-                  placeholder="Detailed explanation of the task..."
-                  style={{ minHeight: "80px", gridColumn: "span 1" }}
-                />
+                <div style={{ gridColumn: "span 1" }}>
+                  <RichEditor
+                    value={formData.description || ""}
+                    onChange={val =>
+                      setFormData(prev => ({ ...prev, description: val }))
+                    }
+                    placeholder="Detailed explanation of the task..."
+                    minHeight="80px"
+                  />
+                </div>
               </div>
               <div className="auth-form-group">
                 <label>Assignee</label>
@@ -656,16 +666,17 @@ export const WbsView: FC = () => {
                         {item.description ? (
                           <div
                             style={{
+                              maxWidth: "300px",
+                              maxHeight: "80px",
+                              overflowY: "auto",
                               fontSize: "0.85rem",
-                              color: "var(--text-muted)",
-                              maxWidth: "200px",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
                             }}
-                            title={item.description}
                           >
-                            {item.description}
+                            <RichEditor
+                              value={item.description}
+                              readOnly={true}
+                              minHeight="auto"
+                            />
                           </div>
                         ) : (
                           <span
@@ -816,7 +827,7 @@ export const WbsView: FC = () => {
                             lineHeight: "1.4",
                           }}
                         >
-                          {item.description}
+                          {stripHtml(item.description)}
                         </div>
                       )}
                       <div

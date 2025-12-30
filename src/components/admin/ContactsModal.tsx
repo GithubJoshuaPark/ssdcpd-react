@@ -372,7 +372,7 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
                           onClick={() => handleSaveResponse(c.id!)}
                           style={{ padding: "6px 20px" }}
                         >
-                          Save Response
+                          Save
                         </button>
                       </div>
                     </div>

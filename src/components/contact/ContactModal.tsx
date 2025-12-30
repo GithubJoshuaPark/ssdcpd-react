@@ -244,6 +244,31 @@ export const ContactModal: FC<ContactModalProps> = ({ isOpen, onClose }) => {
                   minHeight="120px"
                 />
               </div>
+
+              {editingContact && editingContact.response && (
+                <div
+                  style={{
+                    marginBottom: "16px",
+                    padding: "10px",
+                    background: "rgba(56, 189, 248, 0.1)",
+                    borderLeft: "3px solid var(--accent)",
+                    borderRadius: "4px",
+                  }}
+                >
+                  <strong
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--accent)",
+                      display: "block",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Response from Admin:
+                  </strong>
+                  <RichEditor value={editingContact.response} readOnly={true} />
+                </div>
+              )}
+
               <div style={{ display: "flex", gap: "10px" }}>
                 <button
                   type="submit"
@@ -251,7 +276,7 @@ export const ContactModal: FC<ContactModalProps> = ({ isOpen, onClose }) => {
                   disabled={loading}
                   style={{ flex: 1 }}
                 >
-                  {editingContact ? "Update Message" : "Send Message"}
+                  {editingContact ? "Update" : "Send"}
                 </button>
                 {editingContact && (
                   <button

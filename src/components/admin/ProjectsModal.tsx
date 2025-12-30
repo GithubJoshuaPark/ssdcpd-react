@@ -800,7 +800,7 @@ export const ProjectsModal: FC<ProjectsModalProps> = ({ isOpen, onClose }) => {
                     disabled={loading || uploading}
                     style={{ flex: 1 }}
                   >
-                    {editingProject ? "Update Project" : "Add Project"}
+                    {editingProject ? "Update" : "Add"}
                   </button>
                   {editingProject && (
                     <button
