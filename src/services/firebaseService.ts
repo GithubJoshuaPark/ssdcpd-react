@@ -602,15 +602,22 @@ export async function sendEmailByAdminFunction(
   to: string | string[],
   subject: string,
   text: string,
-  html?: string
+  html?: string,
+  cc?: string | string[]
 ): Promise<{ success: boolean; message?: string }> {
   try {
     const sendEmailCallable = httpsCallable<
-      { to: string | string[]; subject: string; text: string; html?: string },
+      {
+        to: string | string[];
+        subject: string;
+        text: string;
+        html?: string;
+        cc?: string | string[];
+      },
       { success: boolean; messageId: string }
     >(functions, "sendEmail");
 
-    const result = await sendEmailCallable({ to, subject, text, html });
+    const result = await sendEmailCallable({ to, subject, text, html, cc });
     console.log("Email sent via Cloud Function:", result.data);
 
     // Record to Realtime Database 'notices'
@@ -620,6 +627,7 @@ export async function sendEmailByAdminFunction(
         subject,
         content: text, // In SendEmailModal, content maps to this arg
         recipients: to,
+        cc: cc || null,
         sentAt: serverTimestamp(),
         type: "email_notification",
       });
@@ -639,6 +647,7 @@ export async function sendEmailByAdminFunction(
         subject,
         content: text,
         recipients: to,
+        cc: cc || null,
         sentAt: serverTimestamp(),
         type: "email_notification_simulated",
       });

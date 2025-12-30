@@ -7,6 +7,7 @@ import type { UserProfile } from "../../types_interfaces/userProfile";
 import DownloadDataWithExcelOrCsv from "../common/DownloadDataWithExcelOrCsv";
 import { Toast } from "../common/Toast";
 import { ProfileModal } from "../profile/ProfileModal";
+import { SendEmailByAdminModal } from "./SendEmailByAdminModal";
 import { SendEmailModal } from "./SendEmailModal";
 
 interface UsersModalProps {
@@ -28,6 +29,7 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
   const [selectedUids, setSelectedUids] = useState<Set<string>>(new Set());
 
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isInviteEmailModalOpen, setIsInviteEmailModalOpen] = useState(false);
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
   const loadUsers = useCallback(async () => {
@@ -249,6 +251,22 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
               onClick={() => setIsDownloadOpen(true)}
             >
               Export
+            </button>
+
+            <button
+              className="auth-button"
+              style={{
+                width: "auto",
+                padding: "6px 15px",
+                fontSize: "0.9rem",
+                marginBottom: 0,
+                backgroundColor: "var(--card-bg)",
+                border: "1px solid var(--accent)",
+                whiteSpace: "nowrap",
+              }}
+              onClick={() => setIsInviteEmailModalOpen(true)}
+            >
+              Inviting...
             </button>
 
             {/* 이메일 발송 버튼 */}
@@ -563,6 +581,11 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
         onClose={() => setIsEmailModalOpen(false)}
         targetEmails={selectedEmails}
         onSendSuccess={() => setSelectedUids(new Set())}
+      />
+
+      <SendEmailByAdminModal
+        isOpen={isInviteEmailModalOpen}
+        onClose={() => setIsInviteEmailModalOpen(false)}
       />
 
       <DownloadDataWithExcelOrCsv

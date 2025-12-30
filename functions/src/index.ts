@@ -61,10 +61,11 @@ export const deleteUserByAdmin = onCall<DeleteUserData>(async request => {
 });
 
 interface SendEmailData {
-  to: string;
+  to: string | string[];
   subject: string;
   text: string;
   html?: string;
+  cc?: string | string[];
 }
 
 export const sendEmail = onCall<SendEmailData>(async request => {
@@ -86,7 +87,7 @@ export const sendEmail = onCall<SendEmailData>(async request => {
     throw new HttpsError("permission-denied", "Only admins can send emails");
   }
 
-  const { to, subject, text, html } = request.data;
+  const { to, subject, text, html, cc } = request.data;
 
   // 3. Nodemailer 설정 (실제 서비스 시에는 환경 변수나 Secret 사용 권장)
   // 여기서는 구조를 잡기 위해 nodemailer를 가져옵니다.
@@ -108,6 +109,7 @@ export const sendEmail = onCall<SendEmailData>(async request => {
         process.env.EMAIL_USER || "soromiso@gmail.com"
       }>`,
       to,
+      cc,
       subject,
       text,
       html: html || text,
