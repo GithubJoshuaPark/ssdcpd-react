@@ -1,14 +1,22 @@
 import type { User } from "firebase/auth";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
-import { FaPlus, FaSearch, FaTimes, FaTrash } from "react-icons/fa";
+import {
+  FaPlus,
+  FaSearch,
+  FaSignOutAlt,
+  FaTimes,
+  FaTrash,
+} from "react-icons/fa";
 import type { UserProfile } from "../../types_interfaces/userProfile";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { UserPopup } from "../popups/UserPopup";
 
 import {
+  createGroupChatRoom,
   createOrUpdateChatRoom,
   deleteChatRoom,
+  leaveChatRoom,
   subscribeToChatRooms,
 } from "../../services/firebaseService";
 import type { ChatRoom } from "../../utils/chatUtils";
@@ -36,6 +44,8 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
   const [isUserPopupOpen, setIsUserPopupOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<string | null>(null);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const [roomToLeave, setRoomToLeave] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   // Load Chat Rooms list
@@ -49,21 +59,33 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
 
   const handleUserSelect = async (selectedUsers: UserProfile[]) => {
     if (selectedUsers.length === 0) return;
-    const targetUser = selectedUsers[0];
-    const roomId = getChatRoomId(currentUser.uid, targetUser.uid);
 
     try {
-      await createOrUpdateChatRoom(
-        roomId,
-        currentUser.uid,
-        currentUser.email || "",
-        userProfile?.name || "Unknown",
-        targetUser.uid,
-        targetUser.email || "",
-        targetUser.name || "Unknown"
-      );
+      if (selectedUsers.length === 1) {
+        // 1:1 Chat
+        const targetUser = selectedUsers[0];
+        const roomId = getChatRoomId(currentUser.uid, targetUser.uid);
+        await createOrUpdateChatRoom(
+          roomId,
+          currentUser.uid,
+          currentUser.email || "",
+          userProfile?.name || "Unknown",
+          targetUser.uid,
+          targetUser.email || "",
+          targetUser.name || "Unknown"
+        );
+        setActiveChatId(roomId);
+      } else {
+        // Group Chat
+        const roomId = await createGroupChatRoom(
+          currentUser.uid,
+          currentUser.email || "",
+          userProfile?.name || "Unknown",
+          selectedUsers
+        );
+        setActiveChatId(roomId);
+      }
       setIsUserPopupOpen(false);
-      setActiveChatId(roomId);
     } catch (error) {
       console.error("Failed to create chat room:", error);
       alert("Failed to create chat room");
@@ -83,6 +105,22 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
     } finally {
       setRoomToDelete(null);
       setDeleteConfirmOpen(false);
+    }
+  };
+
+  const handleLeaveRoom = async () => {
+    if (!roomToLeave) return;
+    try {
+      await leaveChatRoom(roomToLeave, currentUser.uid);
+      if (activeChatId === roomToLeave) {
+        setActiveChatId(null);
+      }
+    } catch (error) {
+      console.error("Failed to leave chat room:", error);
+      alert("Failed to leave chat room");
+    } finally {
+      setRoomToLeave(null);
+      setLeaveConfirmOpen(false);
     }
   };
 
@@ -283,41 +321,81 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
                     >
                       {room.lastMessageAt ? formatTime(room.lastMessageAt) : ""}
                     </span>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        setRoomToDelete(room.id);
-                        setDeleteConfirmOpen(true);
-                      }}
-                      className="glass-btn"
-                      style={{
-                        width: "28px",
-                        height: "28px",
-                        borderRadius: "50%",
-                        padding: 0,
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        background: "rgba(239, 68, 68, 0.1)",
-                        backdropFilter: "blur(4px)",
-                        border: "1px solid rgba(239, 68, 68, 0.2)",
-                        color: "#ef4444",
-                        fontSize: "0.8rem",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.background =
-                          "rgba(239, 68, 68, 0.2)";
-                        e.currentTarget.style.transform = "scale(1.1)";
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background =
-                          "rgba(239, 68, 68, 0.1)";
-                        e.currentTarget.style.transform = "scale(1)";
-                      }}
-                    >
-                      <FaTrash />
-                    </button>
+                    {!room.creatorId || room.creatorId === currentUser.uid ? (
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setRoomToDelete(room.id);
+                          setDeleteConfirmOpen(true);
+                        }}
+                        className="glass-btn"
+                        style={{
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "50%",
+                          padding: 0,
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          background: "rgba(239, 68, 68, 0.1)",
+                          backdropFilter: "blur(4px)",
+                          border: "1px solid rgba(239, 68, 68, 0.2)",
+                          color: "#ef4444",
+                          fontSize: "0.8rem",
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background =
+                            "rgba(239, 68, 68, 0.2)";
+                          e.currentTarget.style.transform = "scale(1.1)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background =
+                            "rgba(239, 68, 68, 0.1)";
+                          e.currentTarget.style.transform = "scale(1)";
+                        }}
+                        title="Delete Room"
+                      >
+                        <FaTrash />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setRoomToLeave(room.id);
+                          setLeaveConfirmOpen(true);
+                        }}
+                        className="glass-btn"
+                        style={{
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "50%",
+                          padding: 0,
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          background: "rgba(245, 158, 11, 0.1)", // Amber for Leave
+                          backdropFilter: "blur(4px)",
+                          border: "1px solid rgba(245, 158, 11, 0.2)",
+                          color: "#f59e0b",
+                          fontSize: "0.8rem",
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background =
+                            "rgba(245, 158, 11, 0.2)";
+                          e.currentTarget.style.transform = "scale(1.1)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background =
+                            "rgba(245, 158, 11, 0.1)";
+                          e.currentTarget.style.transform = "scale(1)";
+                        }}
+                        title="Leave Room"
+                      >
+                        <FaSignOutAlt />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
@@ -340,7 +418,7 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
         isOpen={isUserPopupOpen}
         onClose={() => setIsUserPopupOpen(false)}
         onSelect={handleUserSelect}
-        selectionMode="single"
+        selectionMode="multiple"
         title="New Chat"
       />
 
@@ -353,6 +431,18 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
         onCancel={() => {
           setDeleteConfirmOpen(false);
           setRoomToDelete(null);
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={leaveConfirmOpen}
+        title="Leave Chat"
+        message="Are you sure you want to leave this chat room?"
+        confirmText="Leave"
+        onConfirm={handleLeaveRoom}
+        onCancel={() => {
+          setLeaveConfirmOpen(false);
+          setRoomToLeave(null);
         }}
       />
     </>

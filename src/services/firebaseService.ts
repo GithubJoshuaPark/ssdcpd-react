@@ -1293,14 +1293,12 @@ export function subscribeToChatRooms(
       const data = snapshot.val();
       const myRooms: ChatRoom[] = [];
       Object.keys(data).forEach(key => {
-        if (key.includes(userId)) {
-          const roomData = data[key];
-          if (roomData.participants && roomData.participants[userId]) {
-            myRooms.push({
-              id: key,
-              ...roomData,
-            });
-          }
+        const roomData = data[key];
+        if (roomData.participants && roomData.participants[userId]) {
+          myRooms.push({
+            id: key,
+            ...roomData,
+          });
         }
       });
       // Sort by last message time
@@ -1362,8 +1360,9 @@ export function subscribeToUnreadCount(
     if (snapshot.exists()) {
       const allChats = snapshot.val();
       Object.keys(allChats).forEach(chatId => {
-        if (chatId.includes(userId)) {
-          const messages = allChats[chatId].messages;
+        const chatData = allChats[chatId];
+        if (chatData.participants && chatData.participants[userId]) {
+          const messages = chatData.messages;
           if (messages) {
             Object.values(messages as Record<string, ChatMessage>).forEach(
               msg => {
@@ -1424,6 +1423,58 @@ export async function createOrUpdateChatRoom(
 }
 
 /**
+ * Create Group Chat Room
+ */
+export async function createGroupChatRoom(
+  creatorId: string,
+  creatorEmail: string,
+  creatorName: string,
+  participants: UserProfile[]
+): Promise<string> {
+  const chatsRef = ref(database, "chattings");
+  const newChatRef = push(chatsRef);
+  const roomId = newChatRef.key!;
+
+  const participantsData: Record<string, { name: string; email: string }> = {
+    [creatorId]: { name: creatorName, email: creatorEmail },
+  };
+
+  participants.forEach(p => {
+    participantsData[p.uid] = {
+      name: p.name || "Unknown",
+      email: p.email || "",
+    };
+  });
+
+  await set(newChatRef, {
+    creatorId, // Store creatorId
+    updatedAt: Date.now(),
+    participants: participantsData,
+    lastMessage: "Group chat created",
+    lastMessageAt: Date.now(),
+  });
+
+  return roomId;
+}
+
+/**
+ * Add Participants to Chat Room
+ */
+export async function addParticipantsToChatRoom(
+  chatId: string,
+  participants: UserProfile[]
+): Promise<void> {
+  const roomRef = ref(database, `chattings/${chatId}/participants`);
+  const updates: Record<string, { name: string; email: string }> = {};
+
+  participants.forEach(p => {
+    updates[p.uid] = { name: p.name || "Unknown", email: p.email || "" };
+  });
+
+  await update(roomRef, updates);
+}
+
+/**
  * Send a Message
  */
 export async function sendChatMessage(
@@ -1468,4 +1519,18 @@ export async function markMessageAsRead(
 export async function deleteChatRoom(chatId: string): Promise<void> {
   const roomRef = ref(database, `chattings/${chatId}`);
   await remove(roomRef);
+}
+
+/**
+ * Leave Chat Room
+ */
+export async function leaveChatRoom(
+  chatId: string,
+  userId: string
+): Promise<void> {
+  const participantRef = ref(
+    database,
+    `chattings/${chatId}/participants/${userId}`
+  );
+  await remove(participantRef);
 }

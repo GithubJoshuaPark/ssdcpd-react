@@ -7,15 +7,20 @@ import {
   FaArrowUp,
   FaPaperPlane,
   FaSearch,
-  FaTimes, // Import FaTimes for clearing search
+  FaTimes,
+  FaUser,
+  FaUserPlus,
 } from "react-icons/fa";
 import {
+  addParticipantsToChatRoom,
   sendChatMessage,
   subscribeToChatMessages,
 } from "../../services/firebaseService";
 import type { UserProfile } from "../../types_interfaces/userProfile";
 import type { ChatMessage, ChatRoom } from "../../utils/chatUtils";
 import { formatTime, getOtherParticipantName } from "../../utils/chatUtils";
+import { Toast } from "../common/Toast"; // Import Toast
+import { UserPopup } from "../popups/UserPopup";
 
 interface ChatRoomPopupProps {
   chatId: string;
@@ -38,6 +43,18 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
 
   // Search state
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
+
+  // Invite state
+  const [isInvitePopupOpen, setIsInvitePopupOpen] = useState(false);
+
+  // Participants View state
+  const [isParticipantsViewOpen, setIsParticipantsViewOpen] = useState(false);
+
+  // Toast state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -70,8 +87,6 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
       setCurrentMatchIndex(-1);
       return;
     }
-    // Calculate probable matches for immediate feedback
-    // Note: This relies on current 'messages' state
     const matches = messages
       .filter(msg => msg.text.toLowerCase().includes(term.toLowerCase()))
       .map(msg => msg.id);
@@ -91,10 +106,8 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
   }, [messages, searchTerm]);
 
   // Scroll to Current Match
-  // This is a valid use of useEffect (Syncing DOM scrolling with React state)
   useEffect(() => {
     if (currentMatchIndex >= 0 && matchIds.length > 0) {
-      // Ensure index is within bounds (in case messages changed)
       const safeIndex = Math.min(currentMatchIndex, matchIds.length - 1);
       const activeId = matchIds[safeIndex];
       const el = messageRefs.current[activeId];
@@ -117,7 +130,7 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
       setNewMessage("");
     } catch (error) {
       console.error("Failed to send message:", error);
-      alert("Failed to send message.");
+      setToast({ message: "Failed to send message.", type: "error" });
     }
   };
 
@@ -130,13 +143,11 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
 
   // Search Navigation Handlers
   const handleNextMatch = () => {
-    // Down arrow (Newer)
     if (matchIds.length === 0) return;
     setCurrentMatchIndex(prev => (prev + 1) % matchIds.length);
   };
 
   const handlePrevMatch = () => {
-    // Up arrow (Older)
     if (matchIds.length === 0) return;
     setCurrentMatchIndex(
       prev => (prev - 1 + matchIds.length) % matchIds.length
@@ -145,6 +156,18 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
 
   const clearSearch = () => {
     handleSearchChange("");
+  };
+
+  const handleInviteUsers = async (selectedUsers: UserProfile[]) => {
+    if (selectedUsers.length === 0) return;
+    try {
+      await addParticipantsToChatRoom(chatId, selectedUsers);
+      setToast({ message: "Users invited successfully!", type: "success" });
+      setIsInvitePopupOpen(false);
+    } catch (error) {
+      console.error("Failed to invite users:", error);
+      setToast({ message: "Failed to invite users.", type: "error" });
+    }
   };
 
   // Text Highlighter
@@ -157,7 +180,7 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
         <span
           key={i}
           style={{
-            backgroundColor: isActive ? "#fbbf24" : "#fef08a", // Active: Darker Yellow, Inactive: Light Yellow
+            backgroundColor: isActive ? "#fbbf24" : "#fef08a",
             color: "black",
             borderRadius: "2px",
             padding: "0 2px",
@@ -210,11 +233,64 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
               borderBottom: "1px solid rgba(255,255,255,0.1)",
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              justifyContent: "space-between",
             }}
           >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <button
+                onClick={onClose}
+                className="glass-btn"
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  padding: 0,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  backdropFilter: "blur(5px)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  color: "var(--text-primary)",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+              >
+                <FaArrowLeft />
+              </button>
+              <h3
+                onClick={() => setIsParticipantsViewOpen(true)}
+                style={{
+                  margin: 0,
+                  fontSize: "1.1rem",
+                  maxWidth: "200px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+                title="View Participants"
+                onMouseEnter={e =>
+                  (e.currentTarget.style.textDecoration = "underline")
+                }
+                onMouseLeave={e =>
+                  (e.currentTarget.style.textDecoration = "none")
+                }
+              >
+                {otherName}
+              </h3>
+            </div>
+
+            {/* Invite Button */}
             <button
-              onClick={onClose}
+              onClick={() => setIsInvitePopupOpen(true)}
               className="glass-btn"
               style={{
                 width: "36px",
@@ -230,6 +306,7 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
                 color: "var(--text-primary)",
                 transition: "all 0.2s ease",
               }}
+              title="Invite Users"
               onMouseEnter={e => {
                 e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
                 e.currentTarget.style.transform = "scale(1.05)";
@@ -239,9 +316,8 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
                 e.currentTarget.style.transform = "scale(1)";
               }}
             >
-              <FaArrowLeft />
+              <FaUserPlus />
             </button>
-            <h3 style={{ margin: 0, fontSize: "1.1rem" }}>{otherName}</h3>
           </div>
 
           {/* Search Bar with Navigation */}
@@ -284,7 +360,7 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
                   placeholder="Find in chat..."
                   style={{
                     width: "100%",
-                    padding: "8px 30px 8px 32px", // padding-right for X button
+                    padding: "8px 30px 8px 32px",
                     background: "rgba(255, 255, 255, 0.05)",
                     border: "1px solid rgba(255, 255, 255, 0.1)",
                     borderRadius: "10px",
@@ -398,7 +474,6 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
               messages.map(msg => {
                 const isMine = msg.senderId === currentUser.uid;
                 const isMatch = matchIds.includes(msg.id);
-                // Safe Active Match Check
                 const safeIndex = Math.min(
                   currentMatchIndex,
                   matchIds.length - 1
@@ -430,7 +505,7 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
                         borderBottomLeftRadius: isMine ? "12px" : "2px",
                         fontSize: "0.95rem",
                         wordBreak: "break-word",
-                        boxShadow: isActiveMatch ? "0 0 0 2px #fbbf24" : "none", // Highlight active bubble
+                        boxShadow: isActiveMatch ? "0 0 0 2px #fbbf24" : "none",
                       }}
                     >
                       {renderHighlightedText(msg.text, isActiveMatch)}
@@ -511,6 +586,137 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Participants Modal */}
+      {isParticipantsViewOpen && roomData && (
+        <div
+          className="auth-modal-overlay"
+          onClick={() => setIsParticipantsViewOpen(false)}
+          style={{
+            zIndex: 12100,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(2px)",
+          }}
+        >
+          <div
+            className="glass-panel"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: "300px",
+              maxHeight: "400px",
+              borderRadius: "16px",
+              padding: "0",
+              overflow: "hidden",
+              background: "rgba(30, 41, 59, 0.95)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+            }}
+          >
+            <div
+              style={{
+                padding: "12px 16px",
+                borderBottom: "1px solid rgba(255,255,255,0.1)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "rgba(255,255,255,0.05)",
+              }}
+            >
+              <h4 style={{ margin: 0 }}>
+                Participants ({Object.keys(roomData.participants).length})
+              </h4>
+              <button
+                onClick={() => setIsParticipantsViewOpen(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                }}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div
+              style={{
+                padding: "8px 0",
+                overflowY: "auto",
+                maxHeight: "350px",
+              }}
+            >
+              {Object.entries(roomData.participants).map(([uid, info]) => (
+                <div
+                  key={uid}
+                  style={{
+                    padding: "10px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    borderBottom: "1px solid rgba(255,255,255,0.05)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      background: "rgba(255,255,255,0.1)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    <FaUser size={14} />
+                  </div>
+                  <div style={{ flex: 1, overflow: "hidden" }}>
+                    <div style={{ fontSize: "0.95rem", fontWeight: "500" }}>
+                      {info.name} {uid === currentUser.uid && "(You)"}
+                      {roomData.creatorId === uid && (
+                        <span
+                          style={{
+                            fontSize: "0.7rem",
+                            color: "#fbbf24",
+                            marginLeft: "6px",
+                          }}
+                        >
+                          Owner
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--text-muted)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {info.email}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <UserPopup
+        isOpen={isInvitePopupOpen}
+        onClose={() => setIsInvitePopupOpen(false)}
+        onSelect={handleInviteUsers}
+        selectionMode="multiple"
+        title="Invite Users"
+      />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </>
   );
 };
