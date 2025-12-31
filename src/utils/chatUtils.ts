@@ -9,7 +9,10 @@ export interface ChatMessage {
 
 export interface ChatRoom {
   id: string;
-  participants: Record<string, { name: string; email: string }>;
+  participants: Record<
+    string,
+    { name: string; email: string; unreadCount?: number }
+  >;
   lastMessage?: string;
   lastMessageAt?: number;
   creatorId?: string;

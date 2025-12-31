@@ -321,6 +321,30 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
                     >
                       {room.lastMessageAt ? formatTime(room.lastMessageAt) : ""}
                     </span>
+                    {(room.participants[currentUser.uid]?.unreadCount || 0) >
+                      0 && (
+                      <span
+                        style={{
+                          background: "rgba(239, 68, 68, 0.8)", // Red with opacity
+                          color: "white",
+                          fontSize: "0.7rem",
+                          fontWeight: "bold",
+                          padding: "2px 6px",
+                          borderRadius: "10px",
+                          marginBottom: "2px",
+                          boxShadow: "0 2px 5px rgba(239, 68, 68, 0.3)",
+                          backdropFilter: "blur(4px)",
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          minWidth: "18px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {(room.participants[currentUser.uid]?.unreadCount ||
+                          0) > 99
+                          ? "99+"
+                          : room.participants[currentUser.uid]?.unreadCount}
+                      </span>
+                    )}
                     {!room.creatorId || room.creatorId === currentUser.uid ? (
                       <button
                         onClick={e => {
@@ -420,6 +444,7 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
         onSelect={handleUserSelect}
         selectionMode="multiple"
         title="New Chat"
+        excludedIds={[currentUser.uid]}
       />
 
       <ConfirmDialog

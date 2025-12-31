@@ -10,6 +10,7 @@ interface UserPopupProps {
   onSelect: (users: UserProfile[]) => void;
   selectionMode: "single" | "multiple";
   title?: string;
+  excludedIds?: string[];
 }
 
 export const UserPopup: FC<UserPopupProps> = ({
@@ -18,6 +19,7 @@ export const UserPopup: FC<UserPopupProps> = ({
   onSelect,
   selectionMode,
   title = "Select User",
+  excludedIds = [],
 }) => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,10 +74,11 @@ export const UserPopup: FC<UserPopupProps> = ({
   const filteredUsers = useMemo(() => {
     return users.filter(
       u =>
-        (u.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (u.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+        !excludedIds.includes(u.uid) &&
+        ((u.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (u.email || "").toLowerCase().includes(searchTerm.toLowerCase()))
     );
-  }, [users, searchTerm]);
+  }, [users, searchTerm, excludedIds]);
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const paginatedUsers = useMemo(() => {

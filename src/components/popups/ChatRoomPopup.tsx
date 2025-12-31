@@ -708,6 +708,10 @@ export const ChatRoomPopup: FC<ChatRoomPopupProps> = ({
         onSelect={handleInviteUsers}
         selectionMode="multiple"
         title="Invite Users"
+        excludedIds={[
+          currentUser.uid,
+          ...(roomData ? Object.keys(roomData.participants) : []),
+        ]}
       />
 
       {toast && (

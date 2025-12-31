@@ -1295,6 +1295,24 @@ export function subscribeToChatRooms(
       Object.keys(data).forEach(key => {
         const roomData = data[key];
         if (roomData.participants && roomData.participants[userId]) {
+          // Calculate unread count for this user
+          let unread = 0;
+          if (roomData.messages) {
+            Object.values(
+              roomData.messages as Record<string, ChatMessage>
+            ).forEach(msg => {
+              if (msg.senderId !== userId && !msg.read) {
+                unread++;
+              }
+            });
+          }
+
+          // Inject unreadCount
+          roomData.participants[userId] = {
+            ...roomData.participants[userId],
+            unreadCount: unread,
+          };
+
           myRooms.push({
             id: key,
             ...roomData,
@@ -1408,18 +1426,37 @@ export async function createOrUpdateChatRoom(
   targetUserName: string
 ): Promise<void> {
   const roomRef = ref(database, `chattings/${roomId}`);
+  const snapshot = await get(roomRef);
 
-  await update(roomRef, {
+  const updates: Record<
+    string,
+    { name: string; email: string } | number | string
+  > = {
     [`participants/${currentUserId}`]: {
       name: currentUserName,
-      email: currentUserEmail,
+      email: currentUserEmail || "",
     },
     [`participants/${targetUserId}`]: {
       name: targetUserName,
-      email: targetUserEmail,
+      email: targetUserEmail || "",
     },
     updatedAt: Date.now(),
-  });
+  };
+
+  if (!snapshot.exists()) {
+    updates.createdAt = Date.now();
+    updates.creatorId = currentUserId;
+    updates.type = "1:1";
+  } else {
+    // If legacy room exists without creatorId, we can set the current user as creator/updater
+    // or leave it. User requested "Creator Name + 1", so we need a creator.
+    // Let's set it if missing.
+    if (!snapshot.val().creatorId) {
+      updates.creatorId = currentUserId;
+    }
+  }
+
+  await update(roomRef, updates);
 }
 
 /**
