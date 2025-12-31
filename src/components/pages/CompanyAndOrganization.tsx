@@ -94,11 +94,11 @@ export const CompanyAndOrganization: FC = () => {
           const profile = await getUserProfile(user.uid);
           if (profile?.role === "admin") {
             setIsAdmin(true);
-            loadData();
           } else {
             setIsAdmin(false);
-            setToast({ message: "Access Denied. Admins only.", type: "error" });
           }
+          // Load data for everyone
+          loadData();
         } catch (error) {
           console.error(error);
           setIsAdmin(false);
@@ -447,27 +447,8 @@ export const CompanyAndOrganization: FC = () => {
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <div
-        style={{
-          padding: "50px",
-          color: "#eee",
-          textAlign: "center",
-          fontSize: "1.2rem",
-        }}
-      >
-        Access Denied. You do not have permission to view this page.
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
-      </div>
-    );
-  }
+  // Allow everyone to view, but only admins to edit.
+  // if (!isAdmin) { ... } block removed.
 
   const renderCard = (
     org: Organization,
@@ -557,34 +538,38 @@ export const CompanyAndOrganization: FC = () => {
               조직도보기
             </button>
           )}
-          <button
-            onClick={e => {
-              e.stopPropagation();
-              handleOpenEdit(org, type);
-            }}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#aaa",
-              cursor: "pointer",
-            }}
-          >
-            <FaEdit />
-          </button>
-          <button
-            onClick={e => {
-              e.stopPropagation();
-              handleDelete(org.id!);
-            }}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#ef4444",
-              cursor: "pointer",
-            }}
-          >
-            <FaTrash />
-          </button>
+          {isAdmin && (
+            <>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  handleOpenEdit(org, type);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#aaa",
+                  cursor: "pointer",
+                }}
+              >
+                <FaEdit />
+              </button>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  handleDelete(org.id!);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#ef4444",
+                  cursor: "pointer",
+                }}
+              >
+                <FaTrash />
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -742,12 +727,14 @@ export const CompanyAndOrganization: FC = () => {
             <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <FaBuilding /> Company
             </h3>
-            <button
-              onClick={() => handleOpenCreate("company")}
-              className="icon-btn"
-            >
-              <FaPlus />
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => handleOpenCreate("company")}
+                className="icon-btn"
+              >
+                <FaPlus />
+              </button>
+            )}
           </div>
           {/* 조회기능 */}
           <div style={{ marginBottom: "10px", padding: "0 5px" }}>
@@ -799,14 +786,16 @@ export const CompanyAndOrganization: FC = () => {
             <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               Department
             </h3>
-            <button
-              onClick={() => handleOpenCreate("dept")}
-              className="icon-btn"
-              disabled={!selectedCompanyId}
-              style={{ opacity: !selectedCompanyId ? 0.3 : 1 }}
-            >
-              <FaPlus />
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => handleOpenCreate("dept")}
+                className="icon-btn"
+                disabled={!selectedCompanyId}
+                style={{ opacity: !selectedCompanyId ? 0.3 : 1 }}
+              >
+                <FaPlus />
+              </button>
+            )}
           </div>
           {/* 조회기능 */}
           <div style={{ marginBottom: "10px", padding: "0 5px" }}>
@@ -861,14 +850,16 @@ export const CompanyAndOrganization: FC = () => {
             <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               Team
             </h3>
-            <button
-              onClick={() => handleOpenCreate("team")}
-              className="icon-btn"
-              disabled={!selectedDeptId}
-              style={{ opacity: !selectedDeptId ? 0.3 : 1 }}
-            >
-              <FaPlus />
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => handleOpenCreate("team")}
+                className="icon-btn"
+                disabled={!selectedDeptId}
+                style={{ opacity: !selectedDeptId ? 0.3 : 1 }}
+              >
+                <FaPlus />
+              </button>
+            )}
           </div>
           {/* 조회기능 */}
           <div style={{ marginBottom: "10px", padding: "0 5px" }}>
@@ -922,14 +913,16 @@ export const CompanyAndOrganization: FC = () => {
             <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <FaUsers /> Members
             </h3>
-            <button
-              onClick={() => setIsUserPopupOpen(true)}
-              className="icon-btn"
-              disabled={!selectedTeamId}
-              style={{ opacity: !selectedTeamId ? 0.3 : 1 }}
-            >
-              <FaPlus />
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setIsUserPopupOpen(true)}
+                className="icon-btn"
+                disabled={!selectedTeamId}
+                style={{ opacity: !selectedTeamId ? 0.3 : 1 }}
+              >
+                <FaPlus />
+              </button>
+            )}
           </div>
           {/* 조회기능 */}
           <div style={{ marginBottom: "10px", padding: "0 5px" }}>
@@ -1016,17 +1009,19 @@ export const CompanyAndOrganization: FC = () => {
                       >
                         <FaIdCard />
                       </button>
-                      <button
-                        onClick={() => handleRemoveMember(u.uid)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "#666",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <FaUserTimes />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleRemoveMember(u.uid)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#666",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <FaUserTimes />
+                        </button>
+                      )}
                     </div>
                   ))
                 )}
