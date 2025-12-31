@@ -44,6 +44,12 @@ export const CompanyAndOrganization: FC = () => {
   const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
+  // Search States
+  const [searchCompany, setSearchCompany] = useState("");
+  const [searchDept, setSearchDept] = useState("");
+  const [searchTeam, setSearchTeam] = useState("");
+  const [searchMember, setSearchMember] = useState("");
+
   // User Popup State
   const [isUserPopupOpen, setIsUserPopupOpen] = useState(false);
 
@@ -141,8 +147,11 @@ export const CompanyAndOrganization: FC = () => {
     () =>
       orgs
         .filter(o => !o.parentId)
+        .filter(o =>
+          o.organizationName.toLowerCase().includes(searchCompany.toLowerCase())
+        )
         .sort((a, b) => a.organizationName.localeCompare(b.organizationName)),
-    [orgs]
+    [orgs, searchCompany]
   );
 
   const departments = useMemo(
@@ -150,11 +159,16 @@ export const CompanyAndOrganization: FC = () => {
       selectedCompanyId
         ? orgs
             .filter(o => o.parentId === selectedCompanyId)
+            .filter(o =>
+              o.organizationName
+                .toLowerCase()
+                .includes(searchDept.toLowerCase())
+            )
             .sort((a, b) =>
               a.organizationName.localeCompare(b.organizationName)
             )
         : [],
-    [orgs, selectedCompanyId]
+    [orgs, selectedCompanyId, searchDept]
   );
 
   const teams = useMemo(
@@ -162,11 +176,16 @@ export const CompanyAndOrganization: FC = () => {
       selectedDeptId
         ? orgs
             .filter(o => o.parentId === selectedDeptId)
+            .filter(o =>
+              o.organizationName
+                .toLowerCase()
+                .includes(searchTeam.toLowerCase())
+            )
             .sort((a, b) =>
               a.organizationName.localeCompare(b.organizationName)
             )
         : [],
-    [orgs, selectedDeptId]
+    [orgs, selectedDeptId, searchTeam]
   );
 
   const selectedTeam = useMemo(
@@ -176,8 +195,14 @@ export const CompanyAndOrganization: FC = () => {
 
   const teamMembers = useMemo(() => {
     if (!selectedTeam || !selectedTeam.members) return [];
-    return users.filter(u => selectedTeam.members!.includes(u.uid));
-  }, [selectedTeam, users]);
+    return users
+      .filter(u => selectedTeam.members!.includes(u.uid))
+      .filter(
+        u =>
+          u.name?.toLowerCase().includes(searchMember.toLowerCase()) ||
+          u.email.toLowerCase().includes(searchMember.toLowerCase())
+      );
+  }, [selectedTeam, users, searchMember]);
 
   // --- Handlers ---
 
@@ -462,6 +487,7 @@ export const CompanyAndOrganization: FC = () => {
         border: isActive
           ? "1px solid #3b82f6"
           : "1px solid rgba(255,255,255,0.1)",
+        marginLeft: "5px",
         marginBottom: "10px",
         cursor: "pointer",
         transition: "all 0.2s",
@@ -723,6 +749,16 @@ export const CompanyAndOrganization: FC = () => {
               <FaPlus />
             </button>
           </div>
+          {/* 조회기능 */}
+          <div style={{ marginBottom: "10px", padding: "0 5px" }}>
+            <input
+              type="text"
+              placeholder="Search Company..."
+              value={searchCompany}
+              onChange={e => setSearchCompany(e.target.value)}
+              className="search-input"
+            />
+          </div>
           <div className="org-list">
             {companies.map(c =>
               renderCard(
@@ -771,6 +807,17 @@ export const CompanyAndOrganization: FC = () => {
             >
               <FaPlus />
             </button>
+          </div>
+          {/* 조회기능 */}
+          <div style={{ marginBottom: "10px", padding: "0 5px" }}>
+            <input
+              type="text"
+              placeholder="Search Dept..."
+              value={searchDept}
+              onChange={e => setSearchDept(e.target.value)}
+              className="search-input"
+              disabled={!selectedCompanyId}
+            />
           </div>
           <div className="org-list">
             {!selectedCompanyId ? (
@@ -823,6 +870,17 @@ export const CompanyAndOrganization: FC = () => {
               <FaPlus />
             </button>
           </div>
+          {/* 조회기능 */}
+          <div style={{ marginBottom: "10px", padding: "0 5px" }}>
+            <input
+              type="text"
+              placeholder="Search Team..."
+              value={searchTeam}
+              onChange={e => setSearchTeam(e.target.value)}
+              className="search-input"
+              disabled={!selectedDeptId}
+            />
+          </div>
           <div className="org-list">
             {!selectedDeptId ? (
               <div className="empty-msg">Select a Department first</div>
@@ -873,12 +931,28 @@ export const CompanyAndOrganization: FC = () => {
               <FaPlus />
             </button>
           </div>
+          {/* 조회기능 */}
+          <div style={{ marginBottom: "10px", padding: "0 5px" }}>
+            <input
+              type="text"
+              placeholder="Search Member..."
+              value={searchMember}
+              onChange={e => setSearchMember(e.target.value)}
+              className="search-input"
+              disabled={!selectedTeamId}
+            />
+          </div>
           <div className="org-list">
             {!selectedTeamId ? (
               <div className="empty-msg">Select a Team first</div>
             ) : (
               <div
-                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  marginLeft: "5px",
+                }}
               >
                 {teamMembers.length === 0 ? (
                   <div className="empty-msg">No members assigned</div>
@@ -1042,6 +1116,25 @@ export const CompanyAndOrganization: FC = () => {
                 border-color: rgba(59, 130, 246, 0.8);
                 box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
                 transform: translateY(-2px);
+            }
+            .search-input {
+                width: 100%;
+                padding: 8px 12px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                color: white;
+                font-size: 0.9rem;
+                outline: none;
+                transition: all 0.2s;
+            }
+            .search-input:focus {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: #3b82f6;
+            }
+            .search-input:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
             }
         `}</style>
 
