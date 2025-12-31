@@ -750,12 +750,13 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                     </div>
                     <button
                       type="button"
-                      className="profile-secondary-button"
+                      className="glass-btn glass-btn-cancel"
                       onClick={handleDisableMfa}
                       style={{
                         padding: "8px",
                         fontSize: "0.8rem",
                         width: "100%",
+                        justifyContent: "center",
                       }}
                     >
                       {t("profile.changeNumber") || "Reset 2-MFA Verification"}
@@ -791,7 +792,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                           />
                           <button
                             type="button"
-                            className="auth-button"
+                            className="glass-btn glass-btn-primary"
                             onClick={handleSendMfaCode}
                             disabled={mfaSendingCode}
                             style={{
@@ -803,6 +804,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
+                              justifyContent: "center",
                             }}
                           >
                             {mfaSendingCode
@@ -851,7 +853,7 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                           />
                           <button
                             type="button"
-                            className="auth-button"
+                            className="glass-btn glass-btn-primary"
                             onClick={handleEnrollMfa}
                             style={{
                               flex: 3,
@@ -870,13 +872,14 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                         </div>
                         <button
                           type="button"
-                          className="profile-secondary-button"
+                          className="glass-btn glass-btn-cancel"
                           onClick={() => setMfaStep("idle")}
                           style={{
                             marginTop: "12px",
                             padding: "8px",
                             fontSize: "0.8rem",
                             width: "100%",
+                            justifyContent: "center",
                           }}
                         >
                           {t("profile.changeNumber") ||
@@ -896,8 +899,9 @@ export const ProfileModal: FC<ProfileModalProps> = ({
                 {/* 저장 버튼 */}
                 <button
                   type="submit"
-                  className="auth-button"
+                  className="glass-btn glass-btn-primary"
                   disabled={loading}
+                  style={{ justifyContent: "center" }}
                 >
                   {loading ? "..." : t("profile.save")}
                 </button>
@@ -1019,6 +1023,53 @@ export const ProfileModal: FC<ProfileModalProps> = ({
 
       {/* Hidden container for Password Change Recaptcha */}
       <div id="recaptcha-container-pwd" style={{ display: "none" }}></div>
+
+      <style>{`
+        .glass-btn {
+          padding: 8px 16px;
+          border-radius: 8px;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+          font-weight: 500;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.9rem;
+          border: 1px solid transparent;
+        }
+        .glass-btn-primary {
+          background: rgba(59, 130, 246, 0.2);
+          border-color: rgba(59, 130, 246, 0.3);
+          color: #60a5fa;
+        }
+        .glass-btn-primary:hover {
+          background: rgba(59, 130, 246, 0.3);
+          border-color: rgba(59, 130, 246, 0.5);
+          transform: translateY(-1px);
+          color: white;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+        .glass-btn-cancel {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          color: #fca5a5;
+          justify-content: center;
+        }
+        .glass-btn-cancel:hover {
+          background: rgba(239, 68, 68, 0.2);
+          border-color: rgba(239, 68, 68, 0.4);
+          transform: translateY(-1px);
+          color: #fca5a5;
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+        }
+        .glass-btn-secondary { /* Optional for other buttons if needed later */
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+      `}</style>
 
       {processing && <LoadingSpinner />}
     </>

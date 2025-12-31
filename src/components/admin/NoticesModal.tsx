@@ -199,14 +199,9 @@ export const NoticesModal: FC<NoticesModalProps> = ({
           </div>
 
           <button
-            className="auth-button"
+            className="glass-btn glass-btn-primary"
             style={{
-              width: "auto",
-              padding: "6px 15px",
-              fontSize: "0.9rem",
               marginBottom: 0,
-              backgroundColor: "var(--card-bg)",
-              border: "1px solid var(--accent)",
               whiteSpace: "nowrap",
             }}
             onClick={() => setIsDownloadOpen(true)}
@@ -602,6 +597,33 @@ export const NoticesModal: FC<NoticesModalProps> = ({
         .pagination-button:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+        }
+
+        .glass-btn {
+          padding: 8px 16px;
+          border-radius: 8px;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+          font-weight: 500;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.9rem;
+          border: 1px solid transparent;
+        }
+        .glass-btn-primary {
+          background: rgba(59, 130, 246, 0.2);
+          border-color: rgba(59, 130, 246, 0.3);
+          color: #60a5fa;
+        }
+        .glass-btn-primary:hover {
+          background: rgba(59, 130, 246, 0.3);
+          border-color: rgba(59, 130, 246, 0.5);
+          transform: translateY(-1px);
+          color: white;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
         }
 
         /* Action Buttons */

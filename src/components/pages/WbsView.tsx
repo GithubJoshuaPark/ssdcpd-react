@@ -439,26 +439,71 @@ export const WbsView: FC = () => {
             display: flex;
             gap: 10px;
             margin-bottom: 24px;
-            background: rgba(255,255,255,0.05);
             padding: 4px;
-            border-radius: 8px;
           }
           .wbs-tab-btn {
             flex: 1;
             padding: 10px;
-            border: none;
-            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: var(--text-muted);
-            border-radius: 6px;
+            border-radius: 12px;
             font-size: 0.95rem;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+          }
+          .wbs-tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
           }
           .wbs-tab-btn.active {
-            background: var(--accent);
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.4);
+            color: #60a5fa;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+          }
+          .glass-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            border: 1px solid transparent;
+          }
+          .glass-btn-primary {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: #60a5fa;
+          }
+          .glass-btn-primary:hover {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-1px);
             color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+          }
+          .glass-btn-cancel {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            justify-content: center;
+          }
+          .glass-btn-cancel:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            transform: translateY(-1px);
+            color: #fca5a5;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
           }
         `}
       </style>
@@ -784,14 +829,9 @@ export const WbsView: FC = () => {
             </div>
             {isAdmin && (
               <button
-                className="auth-button"
+                className="glass-btn glass-btn-primary"
                 style={{
-                  width: "auto",
-                  padding: "6px 15px",
-                  fontSize: "0.9rem",
                   marginBottom: 0,
-                  backgroundColor: "var(--card-bg)",
-                  border: "1px solid var(--accent)",
                   whiteSpace: "nowrap",
                 }}
                 onClick={() => setIsDownloadOpen(true)}
