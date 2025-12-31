@@ -4,6 +4,35 @@
       ".read": true,
       ".write": "auth != null"
     },
+    "contacts": {
+      ".indexOn": ["uid"],
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "organizations": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "projects": {
+      ".indexOn": ["uid"],
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "notices": {
+      ".indexOn": ["sentAt"],
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "wbs": {
+      ".indexOn": ["projectId", "order"],
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "daily_report": {
+      ".indexOn": ["projectId", "wbsId", "order"],
+      ".read": true,
+      ".write": "auth != null"
+    },
     "tracks": {
       ".read": true,
       ".write": "auth != null"

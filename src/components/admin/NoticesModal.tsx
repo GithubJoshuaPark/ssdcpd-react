@@ -520,36 +520,37 @@ export const NoticesModal: FC<NoticesModalProps> = ({
           <div
             className="pagination-controls"
             style={{
-              marginTop: "20px",
               display: "flex",
               justifyContent: "center",
-              gap: "10px",
+              alignItems: "center",
+              gap: "15px",
+              padding: "20px 0 10px",
+              borderTop: "1px solid rgba(255,255,255,0.1)",
+              marginTop: "20px",
             }}
           >
             <button
-              className="pagination-button"
+              className="chip"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            >
-              Previous
-            </button>
-            <span
               style={{
-                display: "flex",
-                alignItems: "center",
-                color: "var(--text-muted)",
+                opacity: currentPage === 1 ? 0.5 : 1,
+                cursor: currentPage === 1 ? "not-allowed" : "pointer",
               }}
             >
-              Page {currentPage} of {totalPages}
+              &larr; Prev
+            </button>
+            <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+              Page <strong>{currentPage}</strong> of {totalPages}
             </span>
             <button
-              className="pagination-button"
+              className="chip"
               disabled={currentPage === totalPages}
               onClick={() =>
                 setCurrentPage(prev => Math.min(prev + 1, totalPages))
               }
             >
-              Next
+              Next &rarr;
             </button>
           </div>
         )}

@@ -33,9 +33,12 @@ import {
   serverTimestamp,
 } from "firebase/database";
 import {
+  addDoc,
+  collection,
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   getFirestore,
   setDoc,
   updateDoc,
@@ -53,6 +56,7 @@ import {
 
 // ----- 타입 가져오기 -----
 import type { Contact } from "../types_interfaces/contact";
+import type { Organization } from "../types_interfaces/organization";
 import type { Project } from "../types_interfaces/project";
 import type { Track } from "../types_interfaces/track";
 import type { TranslationsByLang } from "../types_interfaces/translations";
@@ -1209,3 +1213,61 @@ export async function deleteDailyReport(id: string): Promise<void> {
 }
 
 export { auth, database, firestore, storage };
+// ----- Organization CRUD -----
+
+export async function getAllOrganizations(): Promise<Organization[]> {
+  try {
+    // collection() needs 2 args in modular SDK: (firestore instance, path)
+    // But check Step 630 output: 'const firestore = ...' is defined locally in file.
+    // Use the exported firestore instance or the one defined in Step 630 line 78.
+    // Line 78: const firestore: Firestore = getFirestore(app);
+    // So we use 'firestore' variable.
+
+    const organizationsCol = collection(firestore, "organizations");
+    const organizationSnapshot = await getDocs(organizationsCol);
+    const orgList: Organization[] = organizationSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...(doc.data() as Omit<Organization, "id">),
+    }));
+    return orgList;
+  } catch (error) {
+    console.error("Error fetching organizations:", error);
+    throw error;
+  }
+}
+
+export async function addOrganization(
+  org: Omit<Organization, "id">
+): Promise<string> {
+  try {
+    const organizationsCol = collection(firestore, "organizations");
+    const docRef = await addDoc(organizationsCol, org);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding organization:", error);
+    throw error;
+  }
+}
+
+export async function updateOrganization(
+  id: string,
+  updates: Partial<Organization>
+): Promise<void> {
+  try {
+    const orgDoc = doc(firestore, "organizations", id);
+    await updateDoc(orgDoc, updates);
+  } catch (error) {
+    console.error("Error updating organization:", error);
+    throw error;
+  }
+}
+
+export async function deleteOrganization(id: string): Promise<void> {
+  try {
+    const orgDoc = doc(firestore, "organizations", id);
+    await deleteDoc(orgDoc);
+  } catch (error) {
+    console.error("Error deleting organization:", error);
+    throw error;
+  }
+}

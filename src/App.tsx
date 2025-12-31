@@ -3,6 +3,7 @@ import { AuthProvider } from "./auth/AuthProvider";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import { Footer } from "./components/layout/Footer";
 import { Header } from "./components/layout/Header";
+import { CompanyAndOrganization } from "./components/pages/CompanyAndOrganization";
 import { Cpd } from "./components/pages/Cpd";
 import { Intro } from "./components/pages/Intro";
 import { PrivacyPolicy } from "./components/pages/PrivacyPolicy";
@@ -30,6 +31,10 @@ function App() {
                 <Route path="/cpd" element={<Cpd />} />
                 <Route path="/projects" element={<ProjectsView />} />
                 <Route path="/wbs/:projectId" element={<WbsView />} />
+                <Route
+                  path="/organization"
+                  element={<CompanyAndOrganization />}
+                />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
               </Routes>

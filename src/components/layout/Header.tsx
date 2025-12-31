@@ -412,6 +412,23 @@ export const Header: FC = () => {
                   >
                     📢 Notices
                   </button>
+                  <Link
+                    to="/organization"
+                    className="admin-dropdown-item"
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                      display: "block",
+                      width: "100%",
+                      textAlign: "left",
+                    }}
+                    onClick={() => {
+                      handleNavClick();
+                      setIsAdminDropdownOpen(false);
+                    }}
+                  >
+                    🏢 Organization
+                  </Link>
                   <button
                     className="admin-dropdown-item"
                     onClick={handleProjectsClick}

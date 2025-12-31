@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // --- Helper Functions ---
+    // 1. 로그인 여부 확인
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    // 2. 본인 확인 (문서 ID가 본인의 UID와 같은지)
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    // 3. 관리자 확인 (자신의 프로필 문서를 조회하여 role이 'admin'인지 확인)
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/user_profile/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // --- Collection Rules ---
+    // user_profile 컬렉션 규칙
+    match /user_profile/{userId} {
+      
+      // 조회 (Read)
+      // - get: 단일 문서 조회 (본인 이거나 관리자만 가능)
+      // - list: 목록 조회 (관리자만 가능 - UsersModal용)
+      allow get: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      // 생성 (Create)
+      // - 회원가입 시 본인의 데이터만 생성 가능
+      // - 생성 시 role은 'user'여야 함 (관리자 권한 셀프 부여 방지) 혹은 관리자가 생성
+      allow create: if isAuthenticated() && (
+        (isOwner(userId) && request.resource.data.role == 'user') || 
+        isAdmin()
+      );
+      // 수정 (Update)
+      // - 관리자는 모든 수정 가능
+      // - 일반 사용자는 본인 데이터만 수정 가능, 단 'role' 필드는 절대 변경 불가
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        (isOwner(userId) && request.resource.data.role == resource.data.role)
+      );
+      // 삭제 (Delete)
+      // - 본인 또는 관리자만 삭제 가능
+      allow delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
+    // organizations 컬렉션 규칙 (NEW)
+    match /organizations/{orgId} {
+      // 조회: 로그인한 사용자는 누구나 가능
+      allow read: if isAuthenticated();
+      // 생성/수정/삭제: 관리자만 가능
+      allow write: if isAdmin();
+    }
+  }
+}
