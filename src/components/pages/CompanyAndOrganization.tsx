@@ -19,6 +19,7 @@ import {
 } from "../../services/firebaseService";
 import type { Organization } from "../../types_interfaces/organization";
 import type { UserProfile } from "../../types_interfaces/userProfile";
+import { ConfirmDialog } from "../common/ConfirmDialog"; // Added
 import { LoadingSpinner } from "../common/LoadingSpinner";
 import { RichEditor } from "../common/RichEditor";
 import { Toast } from "../common/Toast";
@@ -59,6 +60,14 @@ export const CompanyAndOrganization: FC = () => {
   // Admin Check State
   const [isAdmin, setIsAdmin] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+
+  // Confirm Dialog State (Member Removal)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
+
+  // Confirm Dialog State (Organization Deletion)
+  const [isOrgDeleteConfirmOpen, setIsOrgDeleteConfirmOpen] = useState(false);
+  const [orgIdToDelete, setOrgIdToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const auth = getAuth();
@@ -208,22 +217,65 @@ export const CompanyAndOrganization: FC = () => {
       };
 
       if (formMode === "create") {
-        await addOrganization({
+        const newOrgId = await addOrganization({
           ...commonData,
           presidentName: formType === "company" ? formData.president : null,
           parentId: parentId || null,
+          childIds: [],
           status: "active",
           startDate: now, // Default start
           endDate: "9999-12-31", // Default end
           createdAt: now,
           members: [],
         });
+
+        // Update parent's childIds
+        if (parentId) {
+          const parentOrg = orgs.find(o => o.id === parentId);
+          if (parentOrg) {
+            const currentChildIds = parentOrg.childIds || [];
+            // Remove duplicates just in case
+            const uniqueChildIds = Array.from(
+              new Set([...currentChildIds, newOrgId])
+            );
+            await updateOrganization(parentOrg.id!, {
+              childIds: uniqueChildIds,
+              updatedAt: now,
+            });
+          }
+        }
+
         setToast({ message: "Created successfully.", type: "success" });
       } else if (editingOrg && editingOrg.id) {
+        // 1. Calculate my correct childIds based on current orgs data (Self-correction)
+        const myChildrenIds = orgs
+          .filter(o => o.parentId === editingOrg.id)
+          .map(o => o.id!);
+        const uniqueMyChildrenIds = Array.from(new Set(myChildrenIds));
+
         await updateOrganization(editingOrg.id, {
           ...commonData,
           presidentName: formType === "company" ? formData.president : null,
+          childIds: uniqueMyChildrenIds, // Update with actual children found
         });
+
+        // 2. Ensure I am in my parent's childIds (Parent-correction)
+        if (editingOrg.parentId) {
+          const parent = orgs.find(o => o.id === editingOrg.parentId);
+          if (parent) {
+            const parentChildIds = parent.childIds || [];
+            if (!parentChildIds.includes(editingOrg.id)) {
+              const uniqueParentChildIds = Array.from(
+                new Set([...parentChildIds, editingOrg.id])
+              );
+              await updateOrganization(parent.id!, {
+                childIds: uniqueParentChildIds,
+                updatedAt: now,
+              });
+            }
+          }
+        }
+
         setToast({ message: "Updated successfully.", type: "success" });
       }
 
@@ -237,27 +289,60 @@ export const CompanyAndOrganization: FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this organization? Children will be orphaned."
-      )
-    )
+  const handleDelete = (id: string) => {
+    const org = orgs.find(o => o.id === id);
+    if (org?.childIds && org.childIds.length > 0) {
+      setToast({
+        message:
+          "Cannot delete organization with children. Please delete child organizations first.",
+        type: "error",
+      });
       return;
+    }
+    setOrgIdToDelete(id);
+    setIsOrgDeleteConfirmOpen(true);
+  };
+
+  const executeDeleteOrg = async () => {
+    if (!orgIdToDelete) return;
+
     setLoading(true);
     try {
-      await deleteOrganization(id);
+      const org = orgs.find(o => o.id === orgIdToDelete);
+
+      await deleteOrganization(orgIdToDelete);
+
+      // Remove from parent's childIds
+      if (org?.parentId) {
+        const parentOrg = orgs.find(p => p.id === org.parentId);
+        if (
+          parentOrg &&
+          parentOrg.childIds &&
+          parentOrg.childIds.includes(orgIdToDelete)
+        ) {
+          const newChildIds = parentOrg.childIds.filter(
+            cid => cid !== orgIdToDelete
+          );
+          await updateOrganization(parentOrg.id!, {
+            childIds: newChildIds,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      }
+
       setToast({ message: "Deleted successfully.", type: "success" });
       // Deselect if needed
-      if (selectedCompanyId === id) setSelectedCompanyId(null);
-      if (selectedDeptId === id) setSelectedDeptId(null);
-      if (selectedTeamId === id) setSelectedTeamId(null);
+      if (selectedCompanyId === orgIdToDelete) setSelectedCompanyId(null);
+      if (selectedDeptId === orgIdToDelete) setSelectedDeptId(null);
+      if (selectedTeamId === orgIdToDelete) setSelectedTeamId(null);
       loadData();
     } catch (error) {
       console.error(error);
       setToast({ message: "Failed to delete.", type: "error" });
     } finally {
       setLoading(false);
+      setIsOrgDeleteConfirmOpen(false);
+      setOrgIdToDelete(null);
     }
   };
 
@@ -287,12 +372,16 @@ export const CompanyAndOrganization: FC = () => {
     }
   };
 
-  const handleRemoveMember = async (uid: string) => {
-    if (!selectedTeamId || !selectedTeam) return;
-    if (!window.confirm("Remove this member from team?")) return;
+  const handleRemoveMember = (uid: string) => {
+    setMemberToRemove(uid);
+    setIsConfirmOpen(true);
+  };
+
+  const executeRemoveMember = async () => {
+    if (!memberToRemove || !selectedTeamId || !selectedTeam) return;
 
     const currentMemberIds = selectedTeam.members || [];
-    const newMemberIds = currentMemberIds.filter(id => id !== uid);
+    const newMemberIds = currentMemberIds.filter(id => id !== memberToRemove);
 
     setLoading(true);
     try {
@@ -307,6 +396,8 @@ export const CompanyAndOrganization: FC = () => {
       setToast({ message: "Failed to remove member.", type: "error" });
     } finally {
       setLoading(false);
+      setIsConfirmOpen(false);
+      setMemberToRemove(null);
     }
   };
 
@@ -978,6 +1069,30 @@ export const CompanyAndOrganization: FC = () => {
         }}
         selectionMode="multiple"
         title="Select Members"
+      />
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        title="Remove Member"
+        message="Are you sure you want to remove this member from the team?"
+        confirmText="Remove"
+        onConfirm={executeRemoveMember}
+        onCancel={() => {
+          setIsConfirmOpen(false);
+          setMemberToRemove(null);
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={isOrgDeleteConfirmOpen}
+        title="Delete Organization"
+        message="Are you sure you want to delete this organization? Children will be orphaned."
+        confirmText="Delete"
+        onConfirm={executeDeleteOrg}
+        onCancel={() => {
+          setIsOrgDeleteConfirmOpen(false);
+          setOrgIdToDelete(null);
+        }}
       />
 
       {toast && (

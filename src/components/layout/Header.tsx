@@ -385,33 +385,6 @@ export const Header: FC = () => {
                   >
                     👥 Users
                   </button>
-                  <button
-                    className="admin-dropdown-item"
-                    onClick={handleTracksClick}
-                  >
-                    📚 Tracks
-                  </button>
-                  <button
-                    className="admin-dropdown-item"
-                    onClick={handleContactsClick}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      width: "100%",
-                    }}
-                  >
-                    <span>✉️ Contacts</span>
-                    {pendingCount > 0 && (
-                      <span className="notification-badge">{pendingCount}</span>
-                    )}
-                  </button>
-                  <button
-                    className="admin-dropdown-item"
-                    onClick={handleNoticesClick}
-                  >
-                    📢 Notices
-                  </button>
                   <Link
                     to="/organization"
                     className="admin-dropdown-item"
@@ -434,6 +407,49 @@ export const Header: FC = () => {
                     onClick={handleProjectsClick}
                   >
                     🚀 Projects
+                  </button>
+                  <hr
+                    style={{
+                      border: "0",
+                      height: "1px",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      margin: "5px 0",
+                    }}
+                  />
+                  <button
+                    className="admin-dropdown-item"
+                    onClick={handleContactsClick}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      width: "100%",
+                    }}
+                  >
+                    <span>✉️ Contacts</span>
+                    {pendingCount > 0 && (
+                      <span className="notification-badge">{pendingCount}</span>
+                    )}
+                  </button>
+                  <button
+                    className="admin-dropdown-item"
+                    onClick={handleNoticesClick}
+                  >
+                    📢 Notices
+                  </button>
+                  <hr
+                    style={{
+                      border: "0",
+                      height: "1px",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      margin: "5px 0",
+                    }}
+                  />
+                  <button
+                    className="admin-dropdown-item"
+                    onClick={handleTracksClick}
+                  >
+                    📚 Tracks
                   </button>
                 </div>
               )}

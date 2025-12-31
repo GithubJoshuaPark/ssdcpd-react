@@ -6,6 +6,8 @@ export interface Organization {
   id?: string;
   /** Unique identifier for the parent organization (optional for new items before saving) */
   parentId?: string | null;
+  /** Unique identifiers for the child organizations (optional for new items before saving) */
+  childIds?: string[];
   /** Name of the organization */
   organizationName: string;
   /** President name of the organization */
