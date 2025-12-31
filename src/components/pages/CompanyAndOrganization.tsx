@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   FaBuilding,
   FaEdit,
+  FaIdCard,
   FaPlus,
   FaTrash,
   FaUsers,
@@ -23,6 +24,7 @@ import { ConfirmDialog } from "../common/ConfirmDialog"; // Added
 import { LoadingSpinner } from "../common/LoadingSpinner";
 import { RichEditor } from "../common/RichEditor";
 import { Toast } from "../common/Toast";
+import { UserNameCardPopup } from "../popups/UserNameCardPopup";
 import { UserPopup } from "../popups/UserPopup";
 import { ShowCompanyOrganization } from "./ShowCompanyOrganization";
 
@@ -72,6 +74,11 @@ export const CompanyAndOrganization: FC = () => {
   // Confirm Dialog State (Organization Deletion)
   const [isOrgDeleteConfirmOpen, setIsOrgDeleteConfirmOpen] = useState(false);
   const [orgIdToDelete, setOrgIdToDelete] = useState<string | null>(null);
+
+  // Name Card Popup State
+  const [isNameCardOpen, setIsNameCardOpen] = useState(false);
+  const [selectedUserForCard, setSelectedUserForCard] =
+    useState<UserProfile | null>(null);
 
   useEffect(() => {
     const auth = getAuth();
@@ -920,6 +927,22 @@ export const CompanyAndOrganization: FC = () => {
                         </div>
                       </div>
                       <button
+                        onClick={() => {
+                          setSelectedUserForCard(u);
+                          setIsNameCardOpen(true);
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#60a5fa",
+                          cursor: "pointer",
+                          marginRight: "5px",
+                        }}
+                        title="View Name Card"
+                      >
+                        <FaIdCard />
+                      </button>
+                      <button
                         onClick={() => handleRemoveMember(u.uid)}
                         style={{
                           background: "none",
@@ -1131,6 +1154,20 @@ export const CompanyAndOrganization: FC = () => {
           setOrgIdToDelete(null);
         }}
       />
+
+      {selectedUserForCard && (
+        <UserNameCardPopup
+          isOpen={isNameCardOpen}
+          onClose={() => {
+            setIsNameCardOpen(false);
+            setSelectedUserForCard(null);
+          }}
+          user={selectedUserForCard}
+          company={companies.find(c => c.id === selectedCompanyId)}
+          department={departments.find(d => d.id === selectedDeptId)}
+          team={teams.find(t => t.id === selectedTeamId)}
+        />
+      )}
 
       {toast && (
         <Toast
