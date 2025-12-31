@@ -34,6 +34,7 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
   } | null>(null);
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
   const [contactToDeleteId, setContactToDeleteId] = useState<string | null>(
     null
   );
@@ -146,25 +147,55 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const filteredContacts = useMemo(() => {
-    return contacts.filter(c => {
-      const matchesSearch =
+  const executeBulkDelete = async () => {
+    if (filteredContacts.length === 0) return;
+    setLoading(true);
+    try {
+      await Promise.all(filteredContacts.map(c => c.id && deleteContact(c.id)));
+      setToast({
+        message: `${filteredContacts.length} messages deleted.`,
+        type: "success",
+      });
+      await loadAllContacts();
+    } catch (error) {
+      console.error("Error bulk deleting contacts:", error);
+      setToast({ message: "Failed to bulk delete messages.", type: "error" });
+    } finally {
+      setIsBulkDeleteConfirmOpen(false);
+      setLoading(false);
+    }
+  };
+
+  // 1. Filter by Search Term
+  const searchedContacts = useMemo(() => {
+    return contacts.filter(
+      c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.message.toLowerCase().includes(searchTerm.toLowerCase());
+        c.message.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [contacts, searchTerm]);
 
-      if (filter === "responsed") {
-        return matchesSearch && !!c.response;
-      }
+  // 2. Calculate Counts
+  const counts = useMemo(() => {
+    return {
+      all: searchedContacts.length,
+      responsed: searchedContacts.filter(c => !!c.response).length,
+      pending: searchedContacts.filter(c => !c.response).length,
+    };
+  }, [searchedContacts]);
 
-      if (filter === "pending") {
-        return matchesSearch && !c.response;
-      }
-
-      return matchesSearch;
-    });
-  }, [contacts, searchTerm, filter]);
+  // 3. Filter by Tab
+  const filteredContacts = useMemo(() => {
+    if (filter === "responsed") {
+      return searchedContacts.filter(c => !!c.response);
+    }
+    if (filter === "pending") {
+      return searchedContacts.filter(c => !c.response);
+    }
+    return searchedContacts;
+  }, [searchedContacts, filter]);
 
   const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
   const paginatedContacts = useMemo(() => {
@@ -243,21 +274,61 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
 
         <div
           className="filter-group"
-          style={{ marginBottom: "20px", display: "flex", gap: "10px" }}
+          style={{
+            marginBottom: "20px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          {(["all", "responsed", "pending"] as const).map(type => (
+          <div style={{ display: "flex", gap: "10px" }}>
+            {(["all", "responsed", "pending"] as const).map(type => (
+              <button
+                key={type}
+                className={`chip ${filter === type ? "chip-active" : ""}`}
+                onClick={() => setFilter(type)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span>
+                  {type === "all"
+                    ? "All"
+                    : type === "responsed"
+                    ? "Responsed"
+                    : "Not yet"}
+                </span>
+                <span
+                  style={{
+                    background:
+                      filter === type
+                        ? "rgba(255,255,255,0.2)"
+                        : "rgba(255,255,255,0.1)",
+                    padding: "2px 6px",
+                    borderRadius: "10px",
+                    fontSize: "0.75rem",
+                    minWidth: "18px",
+                    textAlign: "center",
+                    lineHeight: "1",
+                  }}
+                >
+                  {counts[type]}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {filteredContacts.length > 0 && (
             <button
-              key={type}
-              className={`chip ${filter === type ? "chip-active" : ""}`}
-              onClick={() => setFilter(type)}
+              className="glass-btn glass-btn-cancel"
+              onClick={() => setIsBulkDeleteConfirmOpen(true)}
+              style={{ padding: "8px 16px" }}
             >
-              {type === "all"
-                ? "All Contacts"
-                : type === "responsed"
-                ? "Responsed Only"
-                : "Not yet"}
+              Delete ({filteredContacts.length})
             </button>
-          ))}
+          )}
         </div>
 
         <div
@@ -361,16 +432,14 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
                         }}
                       >
                         <button
-                          className="track-delete-button"
+                          className="glass-btn glass-btn-cancel"
                           onClick={() => handleDeleteClick(c.id!)}
-                          style={{ padding: "6px 12px" }}
                         >
                           Delete
                         </button>
                         <button
-                          className="auth-button"
+                          className="glass-btn glass-btn-primary"
                           onClick={() => handleSaveResponse(c.id!)}
-                          style={{ padding: "6px 20px" }}
                         >
                           Save
                         </button>
@@ -447,6 +516,55 @@ export const ContactsModal: FC<ContactsModalProps> = ({ isOpen, onClose }) => {
           setContactToDeleteId(null);
         }}
       />
+
+      <ConfirmDialog
+        isOpen={isBulkDeleteConfirmOpen}
+        title={`Delete ${filteredContacts.length} Contacts`}
+        message={`Are you sure you want to delete ALL ${filteredContacts.length} contacts currently shown in the list? This DELETE operation cannot be undone.`}
+        confirmText={`Delete All (${filteredContacts.length})`}
+        onConfirm={executeBulkDelete}
+        onCancel={() => setIsBulkDeleteConfirmOpen(false)}
+      />
+
+      <style>{`
+        .glass-btn {
+          padding: 8px 16px;
+          border-radius: 8px;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+          font-weight: 500;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.9rem;
+        }
+        .glass-btn-cancel {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          color: #fca5a5;
+        }
+        .glass-btn-cancel:hover {
+          background: rgba(239, 68, 68, 0.2);
+          border-color: rgba(239, 68, 68, 0.4);
+          transform: translateY(-1px);
+          color: #fca5a5;
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+        }
+        .glass-btn-primary {
+          background: rgba(59, 130, 246, 0.2);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          color: #60a5fa;
+        }
+        .glass-btn-primary:hover {
+          background: rgba(59, 130, 246, 0.3);
+          border-color: rgba(59, 130, 246, 0.5);
+          transform: translateY(-1px);
+          color: white;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+      `}</style>
     </div>
   );
 };

@@ -2491,7 +2491,7 @@ body {
 .contact-messages-list {
   max-height: 320px; /* Fixed height for consistency */
   overflow-y: auto;
-  padding-right: 8px;
+  /* padding-right: 8px; */
   margin-top: 8px;
 }
 
