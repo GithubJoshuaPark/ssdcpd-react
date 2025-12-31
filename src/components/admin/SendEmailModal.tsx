@@ -79,9 +79,7 @@ export const SendEmailModal: FC<SendEmailModalProps> = ({
           ✕
         </button>
 
-        <h2 className="auth-modal-title">
-          {t("admin.sendEmail") || "Send Email"}
-        </h2>
+        <h2 className="auth-modal-title">{t("admin.sendEmail") || "Send"}</h2>
         <p style={{ marginBottom: "15px", color: "var(--text-muted)" }}>
           To: {targetEmails.length} recipients
           {targetEmails.length < 5 && ` (${targetEmails.join(", ")})`}
@@ -120,7 +118,7 @@ export const SendEmailModal: FC<SendEmailModalProps> = ({
           >
             <button
               type="button"
-              className="auth-link"
+              className="glass-btn glass-btn-cancel"
               onClick={onClose}
               disabled={sending}
             >
@@ -128,11 +126,10 @@ export const SendEmailModal: FC<SendEmailModalProps> = ({
             </button>
             <button
               type="submit"
-              className="auth-button"
-              style={{ width: "auto", padding: "10px 25px" }}
+              className="glass-btn glass-btn-primary"
               disabled={sending}
             >
-              {sending ? "Sending..." : "Send Email"}
+              {sending ? "Sending..." : "Send"}
             </button>
           </div>
         </form>
@@ -147,6 +144,56 @@ export const SendEmailModal: FC<SendEmailModalProps> = ({
 
         {sending && <LoadingSpinner message="Sending Email..." />}
       </div>
+      <style>{`
+        .glass-btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-btn-cancel {
+            background: rgba(255, 255, 255, 0.05);
+            color: #aaa;
+        }
+        
+        .glass-btn-cancel:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .glass-btn-primary {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.4);
+            color: #60a5fa;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
+        }
+        
+        .glass-btn-primary:hover:not(:disabled) {
+            background: rgba(59, 130, 246, 0.5);
+            border-color: rgba(59, 130, 246, 0.8);
+            color: white;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .glass-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 };

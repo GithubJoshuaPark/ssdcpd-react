@@ -24,6 +24,7 @@ import { LoadingSpinner } from "../common/LoadingSpinner";
 import { RichEditor } from "../common/RichEditor";
 import { Toast } from "../common/Toast";
 import { UserPopup } from "../popups/UserPopup";
+import { ShowCompanyOrganization } from "./ShowCompanyOrganization";
 
 export const CompanyAndOrganization: FC = () => {
   const [orgs, setOrgs] = useState<Organization[]>([]);
@@ -60,6 +61,9 @@ export const CompanyAndOrganization: FC = () => {
   // Admin Check State
   const [isAdmin, setIsAdmin] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+
+  // Chart View State
+  const [viewingCompanyId, setViewingCompanyId] = useState<string | null>(null);
 
   // Confirm Dialog State (Member Removal)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -497,8 +501,29 @@ export const CompanyAndOrganization: FC = () => {
             display: "flex",
             gap: "10px",
             justifyContent: "flex-end",
+            alignItems: "center",
           }}
         >
+          {type === "company" && (
+            <button
+              onClick={e => {
+                e.stopPropagation();
+                setViewingCompanyId(org.id!);
+              }}
+              style={{
+                fontSize: "0.8rem",
+                padding: "4px 8px",
+                borderRadius: "4px",
+                background: "rgba(59, 130, 246, 0.2)",
+                color: "#60a5fa",
+                border: "1px solid rgba(59, 130, 246, 0.3)",
+                cursor: "pointer",
+                marginRight: "auto", // Push to left
+              }}
+            >
+              조직도보기
+            </button>
+          )}
           <button
             onClick={e => {
               e.stopPropagation();
@@ -531,6 +556,18 @@ export const CompanyAndOrganization: FC = () => {
       )}
     </div>
   );
+
+  // If viewing chart, show chart component full screen (or overlay)
+  if (viewingCompanyId) {
+    return (
+      <ShowCompanyOrganization
+        companyId={viewingCompanyId}
+        orgs={orgs}
+        users={users}
+        onClose={() => setViewingCompanyId(null)}
+      />
+    );
+  }
 
   return (
     <div

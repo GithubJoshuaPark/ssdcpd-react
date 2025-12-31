@@ -238,32 +238,14 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             <button
-              className="auth-button"
-              style={{
-                width: "auto",
-                padding: "6px 15px",
-                fontSize: "0.9rem",
-                marginBottom: 0,
-                backgroundColor: "var(--card-bg)",
-                border: "1px solid var(--accent)",
-                whiteSpace: "nowrap",
-              }}
+              className="glass-btn"
               onClick={() => setIsDownloadOpen(true)}
             >
               Export
             </button>
 
             <button
-              className="auth-button"
-              style={{
-                width: "auto",
-                padding: "6px 15px",
-                fontSize: "0.9rem",
-                marginBottom: 0,
-                backgroundColor: "var(--card-bg)",
-                border: "1px solid var(--accent)",
-                whiteSpace: "nowrap",
-              }}
+              className="glass-btn"
               onClick={() => setIsInviteEmailModalOpen(true)}
             >
               Inviting...
@@ -272,18 +254,10 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
             {/* 이메일 발송 버튼 */}
             {selectedUids.size > 0 && (
               <button
-                className="auth-button"
-                style={{
-                  width: "auto",
-                  padding: "6px 15px",
-                  fontSize: "0.9rem",
-                  marginBottom: 0,
-                  backgroundColor: "var(--accent)",
-                  whiteSpace: "nowrap",
-                }}
+                className="glass-btn glass-btn-primary"
                 onClick={() => setIsEmailModalOpen(true)}
               >
-                📧 Send Email ({selectedUids.size})
+                Send Email ({selectedUids.size})
               </button>
             )}
           </div>
@@ -605,6 +579,50 @@ export const UsersModal: FC<UsersModalProps> = ({ isOpen, onClose }) => {
       {error && (
         <Toast message={error} type="error" onClose={() => setError(null)} />
       )}
+
+      <style>{`
+        .glass-btn {
+            padding: 8px 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            background: rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+        }
+        
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .glass-btn-primary {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #60a5fa;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
+            margin-left: 10px;
+        }
+        
+        .glass-btn-primary:hover {
+            background: rgba(59, 130, 246, 0.5);
+            border-color: rgba(59, 130, 246, 0.8);
+            color: white;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+        }
+      `}</style>
     </>
   );
 };
