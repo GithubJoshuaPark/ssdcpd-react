@@ -94,7 +94,7 @@ export const UserPopup: FC<UserPopupProps> = ({
         width: "100%",
         height: "100%",
         backgroundColor: "rgba(0, 0, 0, 0.6)",
-        zIndex: 1000,
+        zIndex: 15000,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -132,12 +132,15 @@ export const UserPopup: FC<UserPopupProps> = ({
           </h3>
           <button
             onClick={onClose}
+            className="glass-btn glass-btn-cancel"
             style={{
-              background: "none",
-              border: "none",
-              color: "var(--text-muted, #888)",
-              cursor: "pointer",
-              fontSize: "1.2rem",
+              width: "32px",
+              height: "32px",
+              borderRadius: "50%",
+              padding: 0,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
             <FaTimes />
@@ -194,14 +197,13 @@ export const UserPopup: FC<UserPopupProps> = ({
             <select
               value={itemsPerPage}
               onChange={e => setItemsPerPage(Number(e.target.value))}
-              className="auth-input"
+              className="glass-btn"
               style={{
                 width: "70px",
-                padding: "6px 8px",
+                padding: "4px 8px",
                 height: "32px",
                 cursor: "pointer",
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid var(--card-border, #333)",
+                justifyContent: "space-between",
                 color: "var(--text-color, #fff)",
               }}
             >
@@ -341,17 +343,15 @@ export const UserPopup: FC<UserPopupProps> = ({
                   <button
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
+                    className="glass-btn"
                     style={{
-                      padding: "4px 10px",
+                      padding: "6px 12px",
                       fontSize: "0.8rem",
-                      background: "rgba(255,255,255,0.1)",
-                      border: "none",
-                      borderRadius: "4px",
-                      color: currentPage === 1 ? "#666" : "white",
+                      opacity: currentPage === 1 ? 0.5 : 1,
                       cursor: currentPage === 1 ? "not-allowed" : "pointer",
                     }}
                   >
-                    &larr; Prev
+                    {"< Prev"}
                   </button>
                   <span
                     style={{
@@ -366,18 +366,16 @@ export const UserPopup: FC<UserPopupProps> = ({
                       setCurrentPage(p => Math.min(totalPages, p + 1))
                     }
                     disabled={currentPage === totalPages}
+                    className="glass-btn"
                     style={{
-                      padding: "4px 10px",
+                      padding: "6px 12px",
                       fontSize: "0.8rem",
-                      background: "rgba(255,255,255,0.1)",
-                      border: "none",
-                      borderRadius: "4px",
-                      color: currentPage === totalPages ? "#666" : "white",
+                      opacity: currentPage === totalPages ? 0.5 : 1,
                       cursor:
                         currentPage === totalPages ? "not-allowed" : "pointer",
                     }}
                   >
-                    Next &rarr;
+                    {"Next >"}
                   </button>
                 </div>
               )}
@@ -407,36 +405,70 @@ export const UserPopup: FC<UserPopupProps> = ({
           </div>
           <button
             onClick={onClose}
-            style={{
-              padding: "10px 20px",
-              borderRadius: "8px",
-              background: "transparent",
-              border: "1px solid var(--card-border, #333)",
-              color: "var(--text-color, #fff)",
-              cursor: "pointer",
-            }}
+            className="glass-btn glass-btn-cancel"
+            style={{ justifyContent: "center" }}
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="primary-btn"
+            className="glass-btn glass-btn-primary"
             disabled={selectedIds.size === 0}
             style={{
-              padding: "10px 24px",
-              borderRadius: "8px",
-              border: "none",
-              cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
+              justifyContent: "center",
               opacity: selectedIds.size === 0 ? 0.5 : 1,
-              background: "var(--accent, #3b82f6)",
-              color: "white",
-              fontWeight: "600",
+              cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
             }}
           >
             Confirm
           </button>
         </div>
       </div>
+      <style>{`
+        .glass-btn {
+          padding: 8px 16px;
+          border-radius: 8px;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+          font-weight: 500;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.9rem;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.05);
+          color: var(--text-color, #eee);
+        }
+        .glass-btn:hover {
+          background: rgba(255, 255, 255, 0.1);
+          transform: translateY(-1px);
+        }
+        .glass-btn-primary {
+          background: rgba(59, 130, 246, 0.2);
+          border-color: rgba(59, 130, 146, 0.3);
+          color: #60a5fa;
+        }
+        .glass-btn-primary:hover {
+          background: rgba(59, 130, 246, 0.3);
+          border-color: rgba(59, 130, 246, 0.5);
+          color: white;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+        .glass-btn-cancel {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          color: #fca5a5;
+        }
+        .glass-btn-cancel:hover {
+          background: rgba(239, 68, 68, 0.2);
+          border-color: rgba(239, 68, 68, 0.4);
+          transform: translateY(-1px);
+          color: #fca5a5;
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+        }
+      `}</style>
     </div>
   );
 };

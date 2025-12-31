@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
   FaArrowLeft,
+  FaChartBar,
   FaEdit,
   FaPlus,
   FaSave,
@@ -839,6 +840,16 @@ export const WbsView: FC = () => {
                 Export
               </button>
             )}
+            <button
+              className="glass-btn glass-btn-primary"
+              style={{
+                marginBottom: 0,
+                whiteSpace: "nowrap",
+              }}
+              onClick={() => navigate(`/projects/${projectId}/gantt`)}
+            >
+              <FaChartBar /> Gantt
+            </button>
           </div>
 
           {/* Desktop Table View */}

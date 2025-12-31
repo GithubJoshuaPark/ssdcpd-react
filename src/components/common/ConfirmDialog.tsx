@@ -38,7 +38,7 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 9999,
+        zIndex: 20000,
         backdropFilter: "blur(4px)",
       }}
     >

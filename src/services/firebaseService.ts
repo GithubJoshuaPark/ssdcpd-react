@@ -28,9 +28,13 @@ import {
   DataSnapshot,
   get,
   getDatabase,
+  onValue,
   push,
   ref,
+  remove,
   serverTimestamp,
+  set,
+  update,
 } from "firebase/database";
 import {
   addDoc,
@@ -62,6 +66,7 @@ import type { Track } from "../types_interfaces/track";
 import type { TranslationsByLang } from "../types_interfaces/translations";
 import type { UserProfile } from "../types_interfaces/userProfile";
 import type { DailyReport, WbsItem } from "../types_interfaces/wbs";
+import type { ChatMessage, ChatRoom } from "../utils/chatUtils";
 
 // ----- Firebase 초기화 -----
 
@@ -1270,4 +1275,197 @@ export async function deleteOrganization(id: string): Promise<void> {
     console.error("Error deleting organization:", error);
     throw error;
   }
+}
+
+// ----- Chatting Functions -----
+
+/**
+ * Subscribe to Chat Rooms list for a user
+ */
+export function subscribeToChatRooms(
+  userId: string,
+  onUpdate: (rooms: ChatRoom[]) => void
+): () => void {
+  const chatsRef = ref(database, "chattings");
+
+  const unsubscribe = onValue(chatsRef, (snapshot: DataSnapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      const myRooms: ChatRoom[] = [];
+      Object.keys(data).forEach(key => {
+        if (key.includes(userId)) {
+          const roomData = data[key];
+          if (roomData.participants && roomData.participants[userId]) {
+            myRooms.push({
+              id: key,
+              ...roomData,
+            });
+          }
+        }
+      });
+      // Sort by last message time
+      myRooms.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+      onUpdate(myRooms);
+    } else {
+      onUpdate([]);
+    }
+  });
+
+  return unsubscribe;
+}
+
+/**
+ * Subscribe to Messages in a Chat Room
+ */
+export function subscribeToChatMessages(
+  chatId: string,
+  currentUserId: string,
+  onUpdate: (messages: ChatMessage[]) => void
+): () => void {
+  const messagesRef = ref(database, `chattings/${chatId}/messages`);
+
+  const unsubscribe = onValue(messagesRef, (snapshot: DataSnapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      const msgList = Object.keys(data).map(key => ({
+        id: key,
+        ...data[key],
+      })) as ChatMessage[];
+
+      msgList.sort((a, b) => a.timestamp - b.timestamp);
+      onUpdate(msgList);
+
+      msgList.forEach(msg => {
+        if (msg.senderId !== currentUserId && !msg.read) {
+          markMessageAsRead(chatId, msg.id);
+        }
+      });
+    } else {
+      onUpdate([]);
+    }
+  });
+
+  return unsubscribe;
+}
+
+/**
+ * Subscribe to Total Unread Count
+ */
+export function subscribeToUnreadCount(
+  userId: string,
+  onUpdate: (count: number) => void
+): () => void {
+  const chatsRef = ref(database, "chattings");
+
+  const unsubscribe = onValue(chatsRef, (snapshot: DataSnapshot) => {
+    let count = 0;
+    if (snapshot.exists()) {
+      const allChats = snapshot.val();
+      Object.keys(allChats).forEach(chatId => {
+        if (chatId.includes(userId)) {
+          const messages = allChats[chatId].messages;
+          if (messages) {
+            Object.values(messages as Record<string, ChatMessage>).forEach(
+              msg => {
+                if (msg.senderId !== userId && !msg.read) {
+                  count++;
+                }
+              }
+            );
+          }
+        }
+      });
+    }
+    onUpdate(count);
+  });
+
+  return unsubscribe;
+}
+
+/**
+ * Get Single Chat Room Data (Once)
+ */
+export async function getChatRoomData(
+  roomId: string
+): Promise<ChatRoom | null> {
+  const roomRef = ref(database, `chattings/${roomId}`);
+  const snapshot = await get(roomRef);
+  if (snapshot.exists()) {
+    return { id: roomId, ...snapshot.val() } as ChatRoom;
+  }
+  return null;
+}
+
+/**
+ * Create or Update Chat Room (update participants)
+ */
+export async function createOrUpdateChatRoom(
+  roomId: string,
+  currentUserId: string,
+  currentUserEmail: string,
+  currentUserName: string,
+  targetUserId: string,
+  targetUserEmail: string,
+  targetUserName: string
+): Promise<void> {
+  const roomRef = ref(database, `chattings/${roomId}`);
+
+  await update(roomRef, {
+    [`participants/${currentUserId}`]: {
+      name: currentUserName,
+      email: currentUserEmail,
+    },
+    [`participants/${targetUserId}`]: {
+      name: targetUserName,
+      email: targetUserEmail,
+    },
+    updatedAt: Date.now(),
+  });
+}
+
+/**
+ * Send a Message
+ */
+export async function sendChatMessage(
+  chatId: string,
+  senderId: string,
+  senderName: string,
+  text: string
+): Promise<void> {
+  const messagesRef = ref(database, `chattings/${chatId}/messages`);
+  const newMsgRef = push(messagesRef);
+  const now = Date.now();
+
+  await set(newMsgRef, {
+    senderId,
+    senderName,
+    text,
+    timestamp: now,
+    read: false,
+  });
+
+  // Update room's last message
+  await update(ref(database, `chattings/${chatId}`), {
+    lastMessage: text,
+    lastMessageAt: now,
+  });
+}
+
+/**
+ * Mark Message as Read
+ */
+export async function markMessageAsRead(
+  chatId: string,
+  messageId: string
+): Promise<void> {
+  const msgRef = ref(database, `chattings/${chatId}/messages/${messageId}`);
+  await update(msgRef, { read: true });
+}
+
+/**
+ * Delete Chat Room
+ */
+export async function deleteChatRoom(chatId: string): Promise<void> {
+  const roomRef = ref(database, `chattings/${chatId}`);
+  await remove(roomRef);
 }
