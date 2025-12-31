@@ -1,6 +1,6 @@
 import html2canvas from "html2canvas";
 import type { FC } from "react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   FaBuilding,
   FaDownload,
@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import type { Organization } from "../../types_interfaces/organization";
 import type { UserProfile } from "../../types_interfaces/userProfile";
+import { SendEmailModal } from "../admin/SendEmailModal";
 
 interface UserNameCardPopupProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export const UserNameCardPopup: FC<UserNameCardPopupProps> = ({
   team,
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -74,6 +76,13 @@ export const UserNameCardPopup: FC<UserNameCardPopupProps> = ({
             marginBottom: "10px",
           }}
         >
+          <button
+            onClick={() => setIsEmailModalOpen(true)}
+            className="glass-btn glass-btn-primary"
+            style={{ marginRight: "10px" }}
+          >
+            <FaEnvelope /> Email
+          </button>
           <button
             onClick={handleDownload}
             className="glass-btn glass-btn-primary"
@@ -284,6 +293,32 @@ export const UserNameCardPopup: FC<UserNameCardPopupProps> = ({
           </div>
         </div>
       </div>
+
+      {isEmailModalOpen && (
+        <SendEmailModal
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          targetEmails={[user.email]}
+          initialContent={`
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; font-family: sans-serif; color: #333;">
+              <h3 style="color: #3b82f6; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">Contact Information</h3>
+              <p><strong>Name:</strong> ${user.name}</p>
+              <p><strong>Company:</strong> ${
+                company?.organizationName || "-"
+              }</p>
+              <p><strong>Department/Team:</strong> ${
+                [department?.organizationName, team?.organizationName]
+                  .filter(Boolean)
+                  .join(" / ") || "-"
+              }</p>
+              <p><strong>Role:</strong> ${user.role}</p>
+              <p><strong>Email:</strong> ${user.email}</p>
+              <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;" />
+              <p style="color: #666; font-size: 0.9em;">Sent via SSDCPD</p>
+            </div>
+          `}
+        />
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import type { FC, FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "../../i18n/useI18n";
 import { sendEmailByAdminFunction } from "../../services/firebaseService";
 import { LoadingSpinner } from "../common/LoadingSpinner";
@@ -11,6 +11,7 @@ interface SendEmailModalProps {
   onClose: () => void;
   targetEmails: string[];
   onSendSuccess?: () => void;
+  initialContent?: string;
 }
 
 export const SendEmailModal: FC<SendEmailModalProps> = ({
@@ -18,15 +19,25 @@ export const SendEmailModal: FC<SendEmailModalProps> = ({
   onClose,
   targetEmails,
   onSendSuccess,
+  initialContent = "",
 }) => {
   const { t } = useI18n();
   const [subject, setSubject] = useState("");
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(initialContent);
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
+
+  // Reset content when modal opens or initialContent changes
+  useEffect(() => {
+    if (isOpen) {
+      setSubject("");
+      setContent(initialContent);
+      setSending(false); // Also reset sending state
+    }
+  }, [isOpen, initialContent]);
 
   if (!isOpen) return null;
 
@@ -49,8 +60,8 @@ export const SendEmailModal: FC<SendEmailModalProps> = ({
         setToast({ message: "Email sent successfully!", type: "success" });
         setTimeout(() => {
           onClose();
-          setSubject("");
-          setContent("");
+          // setSubject(""); // Handled by useEffect on next open
+          // setContent(""); // Handled by useEffect on next open
           setToast(null);
           if (onSendSuccess) onSendSuccess();
         }, 1500);
