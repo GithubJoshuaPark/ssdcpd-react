@@ -1,7 +1,7 @@
 import type { User } from "firebase/auth";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
-import { FaPlus, FaTimes, FaTrash } from "react-icons/fa";
+import { FaPlus, FaSearch, FaTimes, FaTrash } from "react-icons/fa";
 import type { UserProfile } from "../../types_interfaces/userProfile";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { UserPopup } from "../popups/UserPopup";
@@ -36,6 +36,7 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
   const [isUserPopupOpen, setIsUserPopupOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Load Chat Rooms list
   useEffect(() => {
@@ -84,6 +85,12 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
       setDeleteConfirmOpen(false);
     }
   };
+
+  const filteredRooms = chatRooms.filter(room =>
+    getOtherParticipantName(room, currentUser.uid)
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
 
   return (
     <>
@@ -153,10 +160,51 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
               </button>
             </div>
           </div>
-          {/* 조회기능  */}
+
+          {/* Search Bar */}
+          <div
+            style={{
+              padding: "12px 16px",
+              borderBottom: "1px solid rgba(255,255,255,0.05)",
+            }}
+          >
+            <div
+              style={{
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <FaSearch
+                style={{
+                  position: "absolute",
+                  left: "12px",
+                  color: "var(--text-muted)",
+                  fontSize: "0.9rem",
+                }}
+              />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search chats..."
+                style={{
+                  width: "100%",
+                  padding: "10px 10px 10px 36px",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "12px",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                  fontSize: "0.95rem",
+                }}
+              />
+            </div>
+          </div>
+
           {/* List Content */}
           <div className="chat-list" style={{ flex: 1, overflowY: "auto" }}>
-            {chatRooms.length === 0 ? (
+            {filteredRooms.length === 0 ? (
               <div
                 style={{
                   padding: "40px",
@@ -164,13 +212,19 @@ export const ChatManagerPopup: FC<ChatManagerPopupProps> = ({
                   color: "var(--text-muted)",
                 }}
               >
-                <p>No chats yet.</p>
-                <p style={{ fontSize: "0.85rem" }}>
-                  Press + to start a conversation.
-                </p>
+                {searchTerm ? (
+                  <p>No chats found.</p>
+                ) : (
+                  <>
+                    <p>No chats yet.</p>
+                    <p style={{ fontSize: "0.85rem" }}>
+                      Press + to start a conversation.
+                    </p>
+                  </>
+                )}
               </div>
             ) : (
-              chatRooms.map(room => (
+              filteredRooms.map(room => (
                 <div
                   key={room.id}
                   onClick={() => setActiveChatId(room.id)}
