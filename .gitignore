@@ -29,3 +29,5 @@ dist-ssr
 
 # Firebase database backup
 rootbridge-9b225-default-rtdb-export.json
+firebase_*.json
+firebase.rules
